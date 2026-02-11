@@ -42,7 +42,9 @@ export class JoinPipe implements PipeTransform {
           class="p-3 rounded-lg bg-velvet-900 border border-velvet-700"
         >
           <!-- Category Title -->
-          <h4 class="text-xs font-semibold text-white mb-2">{{ tagGroup.category | tagCategory }}</h4>
+          <h4 class="text-xs font-semibold text-white mb-2">
+            {{ tagGroup.category | tagCategory }}
+          </h4>
 
           <!-- Value Toggles -->
           <div class="space-y-1.5">
@@ -82,7 +84,9 @@ export class JoinPipe implements PipeTransform {
         <div class="space-y-1">
           <div *ngFor="let filter of store.selectedFilters()" class="text-xs text-velvet-300">
             <span class="font-semibold">{{ filter.category | tagCategory }}:</span>
-            <span class="ml-2" *ngFor="let value of filter.values; let last = last">{{ value | tagValue }}<span *ngIf="!last">, </span></span>
+            <span class="ml-2" *ngFor="let value of filter.values; let last = last"
+              >{{ value | tagValue }}<span *ngIf="!last">, </span></span
+            >
           </div>
         </div>
       </div>

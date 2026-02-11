@@ -57,7 +57,9 @@ import { Tag } from '../../models/coin.model';
               <div *ngIf="editingId() !== tag.id" class="flex-1 flex items-center justify-between">
                 <div>
                   <p class="text-xs text-white">
-                    <span class="font-semibold text-velvet-300">{{ tag.category | tagCategory }}:</span>
+                    <span class="font-semibold text-velvet-300"
+                      >{{ tag.category | tagCategory }}:</span
+                    >
                     {{ tag.value | tagValue }}
                   </p>
                   <p class="text-xs text-velvet-600 mt-0.5">
