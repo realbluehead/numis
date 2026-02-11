@@ -20,7 +20,7 @@ export class JoinPipe implements PipeTransform {
 @Component({
   selector: 'app-filters',
   standalone: true,
-  imports: [CommonModule, JoinPipe, TranslatePipe, TagCategoryPipe, TagValuePipe],
+  imports: [CommonModule, TranslatePipe, TagCategoryPipe, TagValuePipe],
   template: `
     <div class="space-y-2 p-4 rounded-lg bg-velvet-800 border border-velvet-700 shadow-soft">
       <!-- Header -->

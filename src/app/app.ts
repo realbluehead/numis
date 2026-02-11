@@ -27,7 +27,7 @@ import { Coin } from '../models/coin.model';
     <div class="min-h-screen bg-velvet-950">
       <!-- Header -->
       <header
-        class="sticky top-0 z-40 border-b border-velvet-800 bg-velvet-900/95 backdrop-blur-md shadow-soft"
+        class="sticky top-0 z-40 border-b border-velvet-800 bg-velvet-950 backdrop-blur-md shadow-soft"
       >
         <div class="max-w-7xl mx-auto px-4 py-3">
           <!-- Top Row: Title (left) + Export/Import/Language (right) -->
