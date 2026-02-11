@@ -1,59 +1,160 @@
-# Numis
+# NUMISMATECA - Colección de Monedas Antiguas
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.16.
+Una aplicación Angular 20 con Tailwind CSS para gestionar y visualizar una colección de monedas antiguas. Diseño moderno con paleta de terciopelos azules suaves.
 
-## Development server
+## Características
 
-To start a local development server, run:
+✨ **Estética Moderna Sofisticada**: Diseño limpio centrado en colores azules suaves (terciopelo), tipografía moderna y espacios generosos
 
-```bash
-ng serve
+📋 **Gestión Completa CRUD**:
+
+- Crear nuevas monedas
+- Editar monedas existentes
+- Eliminar monedas de la colección
+- Visualización en galería estilo museo
+
+🏷️ **Sistema de Etiquetas Dinámico**:
+
+- Añadir múltiples categorías de tags (País, Año, Metal, etc.)
+- Valores personalizados por categoría
+- Visualización jerárquica de etiquetas
+
+🔍 **Filtrado Avanzado**:
+
+- Lógica AND: Las monedas deben coincidir con TODOS los filtros seleccionados
+- Toggles por categoría y valor
+- Limpieza rápida de filtros
+
+🖼️ **Galería Museo**:
+
+- Visualización en cuadrícula responsive
+- Soporte para múltiples imágenes por moneda
+- Indicadores de imágenes adicionales
+
+💾 **Persistencia de Datos**:
+
+- Almacenamiento automático en localStorage
+- Sincronización en tiempo real con Signals
+- Import/Export en JSON
+
+## Estructura del Proyecto
+
+```
+src/
+├── app/                      # Componente raíz
+├── models/                   # Interfaces y tipos
+│   └── coin.model.ts        # Modelo Coin y Tag
+├── services/                 # Lógica de negocio
+│   └── coin.store.ts        # Estado con Signals
+├── components/              # Componentes Angular
+│   ├── gallery/             # Visualización en galería
+│   ├── filters/             # Panel de filtros
+│   └── form/                # Formulario CRUD
+├── styles.css               # Estilos globales con Tailwind
+└── main.ts                  # Punto de entrada
+
+public/                       # Archivos estáticos
+dist/                         # Build de producción
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Tecnologías
 
-## Code scaffolding
+- **Angular 20**: Framework frontend moderno
+- **Signals**: Gestión de estado reactivo (zoneless)
+- **Tailwind CSS 3**: Utilidades CSS para estilos
+- **TypeScript**: Tipado estricto
+- **localStorage**: Persistencia de datos
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Instalación
 
 ```bash
-ng generate --help
+npm install
 ```
 
-## Building
-
-To build the project run:
+## Desarrollo
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+La aplicación estará disponible en `http://localhost:4200`
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Build Producción
 
 ```bash
-ng test
+npm run build
 ```
 
-## Running end-to-end tests
+Los archivos compilados estarán en `dist/numis/`
 
-For end-to-end (e2e) testing, run:
+## Uso
 
-```bash
-ng e2e
+### Añadir Moneda
+
+1. Ve a la pestaña "Nueva Moneda"
+2. Añade URLs de imágenes (máximo 2)
+3. Define etiquetas (categoría + valor)
+4. Haz clic en "Crear Moneda"
+
+### Filtrar Monedas
+
+1. En el panel lateral "Filtros"
+2. Selecciona checkboxes de categorías y valores
+3. Las monedas se filtran automáticamente (lógica AND)
+4. Usa "Limpiar todos" para resetear
+
+### Editar Moneda
+
+1. En la galería, haz clic en "Editar"
+2. Modifica datos e imágenes
+3. Haz clic en "Actualizar Moneda"
+
+### Importar/Exportar
+
+- **Exportar**: Descarga JSON de todas las monedas
+- **Importar**: Carga JSON previamente exportado
+- **Limpiar**: Elimina todos los datos (con confirmación)
+
+## Modelo de Datos
+
+```typescript
+interface Coin {
+  id: string;
+  images: string[]; // URLs de imágenes
+  tags: Tag[]; // Etiquetas personalizadas
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface Tag {
+  category: string; // Ej: "País", "Año"
+  value: string; // Ej: "España", "1850"
+}
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Características Técnicas
 
-## Additional Resources
+- ✅ Componentes standalone sin módulos
+- ✅ Signals para estado reactivo (zoneless)
+- ✅ `inject()` para inyección de dependencias
+- ✅ `@if` y `@for` para control de flujo
+- ✅ localStorage con sincronización automática
+- ✅ Responsive design (mobile-first)
+- ✅ Validación de entrada en formularios
+- ✅ Confirmaciones antes de acciones destructivas
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Paleta de Colores - Terciopelo Azul Moderno
+
+| Elemento          | Color          | Clase Tailwind      |
+| ----------------- | -------------- | ------------------- |
+| Fondo Principal   | Blanco Crema   | `bg-white`          |
+| Fondo Secundario  | Azul Muy Claro | `bg-velvet-50`      |
+| Acentos Primarios | Azul Profundo  | `bg-velvet-600`     |
+| Acentos Suaves    | Azul Claro     | `bg-velvet-300`     |
+| Bordes            | Azul Medio     | `border-velvet-300` |
+| Texto Principal   | Azul Oscuro    | `text-velvet-900`   |
+| Sombras           | Azul 15%       | `shadow-soft`       |
+
+---
+
+**Última actualización**: 11 de Febrero de 2026

@@ -1,0 +1,118 @@
+[
+  {
+    "id": "coin-demo-1",
+    "images": [
+      "https://images.unsplash.com/photo-1569163139394-de4798aa62b2?w=500",
+      "https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=500"
+    ],
+    "tags": [
+      {
+        "category": "País",
+        "value": "Imperio Romano"
+      },
+      {
+        "category": "Año",
+        "value": "27 DC"
+      },
+      {
+        "category": "Metal",
+        "value": "Oro"
+      },
+      {
+        "category": "Período",
+        "value": "Augusto"
+      }
+    ]
+  },
+  {
+    "id": "coin-demo-2",
+    "images": ["https://images.unsplash.com/photo-1500595046891-3e886f48580b?w=500"],
+    "tags": [
+      {
+        "category": "País",
+        "value": "España"
+      },
+      {
+        "category": "Año",
+        "value": "1850"
+      },
+      {
+        "category": "Metal",
+        "value": "Plata"
+      },
+      {
+        "category": "Período",
+        "value": "Monarquía"
+      }
+    ]
+  },
+  {
+    "id": "coin-demo-3",
+    "images": [
+      "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=500",
+      "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=500"
+    ],
+    "tags": [
+      {
+        "category": "País",
+        "value": "Francia"
+      },
+      {
+        "category": "Año",
+        "value": "1789"
+      },
+      {
+        "category": "Metal",
+        "value": "Oro"
+      },
+      {
+        "category": "Período",
+        "value": "Revolución"
+      }
+    ]
+  },
+  {
+    "id": "coin-demo-4",
+    "images": ["https://images.unsplash.com/photo-1522836369810-0a115dc54f3d?w=500"],
+    "tags": [
+      {
+        "category": "País",
+        "value": "Reino Unido"
+      },
+      {
+        "category": "Año",
+        "value": "1897"
+      },
+      {
+        "category": "Metal",
+        "value": "Oro"
+      },
+      {
+        "category": "Período",
+        "value": "Victoria"
+      }
+    ]
+  },
+  {
+    "id": "coin-demo-5",
+    "images": ["https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500"],
+    "tags": [
+      {
+        "category": "País",
+        "value": "Grecia Antigua"
+      },
+      {
+        "category": "Año",
+        "value": "450 AC"
+      },
+      {
+        "category": "Metal",
+        "value": "Plata"
+      },
+      {
+        "category": "Período",
+        "value": "Clásico"
+      }
+    ]
+  }
+]
