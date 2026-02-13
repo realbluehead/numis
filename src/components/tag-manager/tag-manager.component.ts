@@ -268,6 +268,8 @@ export class TagManagerComponent {
       this.tagService.deleteTag(id);
     });
 
-    console.log(`Fixed duplicates in category "${category}": deleted ${tagsToDelete.length} duplicates`);
+    console.log(
+      `Fixed duplicates in category "${category}": deleted ${tagsToDelete.length} duplicates`,
+    );
   }
 }
