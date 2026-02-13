@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectorRef, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoinStore } from '../services/coin.store';
 import { TagService } from '../services/tag.service';
+import { SyncService } from '../services/sync.service';
 import { I18nService } from '../services/i18n.service';
 import { TranslatePipe } from '../pipes/translate.pipe';
 import { GalleryComponent } from '../components/gallery/gallery.component';
@@ -24,45 +25,112 @@ import { Coin } from '../models/coin.model';
     TagManagerComponent,
   ],
   template: `
-    <div class="min-h-screen bg-velvet-950">
+    <div class="min-h-screen bg-amazon-bg">
       <!-- Header -->
       <header
-        class="sticky top-0 z-40 border-b border-velvet-800 bg-velvet-950 backdrop-blur-md shadow-soft"
+        class="sticky top-0 z-40 border-b border-amazon-border bg-amazon-bg backdrop-blur-md shadow-xs"
       >
-        <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="w-full px-3 py-2">
           <!-- Top Row: Title (left) + Export/Import/Language (right) -->
-          <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center justify-between mb-1.5">
             <!-- Title -->
             <div>
-              <h1 class="text-3xl font-display text-white mb-0.5">
+              <h1 class="text-2xl font-display text-amazon-textLight mb-0">
                 {{ 'header.title' | translate }}
               </h1>
             </div>
 
-            <!-- Right Controls: Export/Import + Language Selector -->
-            <div class="flex items-center gap-2">
-              <button
-                (click)="exportData()"
-                class="px-3 py-1 bg-velvet-700 hover:bg-velvet-600 text-white rounded-lg text-xs font-semibold transition-colors"
-              >
+            <!-- Right Controls: Export/Import + Sync + Language Selector -->
+            <div class="flex items-center gap-1">
+              <button (click)="exportData()" class="btn-sm btn-primary">
                 {{ 'header.export' | translate }}
               </button>
-              <button
-                (click)="importFile.click()"
-                class="px-3 py-1 bg-velvet-700 hover:bg-velvet-600 text-white rounded-lg text-xs font-semibold transition-colors"
-              >
+              <button (click)="importFile.click()" class="btn-sm btn-primary">
                 {{ 'header.import' | translate }}
+              </button>
+
+              <!-- Sync Status Indicator -->
+              <div class="flex items-center gap-2 px-2 py-1 rounded bg-amazon-surface text-xs">
+                <span *ngIf="syncService.syncing()" class="animate-spin">⟳</span>
+                <span
+                  *ngIf="!syncService.syncing() && syncService.lastSyncTime()"
+                  class="text-amazon-success"
+                  >✓</span
+                >
+                <span
+                  *ngIf="!syncService.syncing() && !syncService.lastSyncTime()"
+                  class="text-amazon-textMuted"
+                  >◯</span
+                >
+                <div class="flex flex-col">
+                  <span *ngIf="syncService.syncing()" class="text-amazon-text">{{
+                    'header.syncing' | translate
+                  }}</span>
+                  <span
+                    *ngIf="!syncService.syncing() && syncService.lastSyncTime()"
+                    class="text-amazon-success"
+                  >
+                    {{ 'header.lastSync' | translate }}:
+                    {{ syncService.lastSyncTime() | date: 'short' }}
+                  </span>
+                  <span
+                    *ngIf="!syncService.syncing() && !syncService.lastSyncTime()"
+                    class="text-amazon-textMuted"
+                  >
+                    {{ 'header.neverSynced' | translate }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Error Alert -->
+              <span
+                *ngIf="syncService.syncError()"
+                class="text-xs text-amazon-danger px-2 py-1 rounded cursor-pointer hover:bg-amazon-card"
+                (click)="dismissSyncError()"
+                title="Click to dismiss"
+              >
+                ⚠️ {{ syncService.syncError() }}
+              </span>
+
+              <!-- Sync Now Button -->
+              <button
+                (click)="syncNow()"
+                [disabled]="syncService.syncing()"
+                class="btn-sm bg-amazon-orange hover:bg-amazon-orangeHover border-0 disabled:opacity-50"
+                [title]="syncService.syncing() ? 'Syncing...' : 'Sync now'"
+              >
+                {{ syncService.syncing() ? '⟳' : '↻' }}
+              </button>
+
+              <!-- Force Refresh Button -->
+              <button
+                (click)="forceRefresh()"
+                [disabled]="syncService.syncing()"
+                class="btn-sm bg-blue-700 hover:bg-blue-600 border-0 disabled:opacity-50"
+                [title]="syncService.syncing() ? 'Syncing...' : 'Force refresh from server'"
+              >
+                ⬇️
+              </button>
+
+              <!-- CouchDB Credentials Button -->
+              <button
+                (click)="openCredentialsModal()"
+                class="btn-sm bg-gray-700 hover:bg-gray-600 border-0"
+                title="CouchDB credentials"
+              >
+                ⚙️
               </button>
 
               <!-- Language Selector Dropdown -->
               <select
                 (change)="onLanguageChange($event)"
-                class="px-3 py-1 rounded-lg text-xs font-semibold bg-velvet-700 hover:bg-velvet-600 text-white border border-velvet-600 focus:outline-none focus:ring-2 focus:ring-velvet-500 transition-colors cursor-pointer"
+                class="btn-sm bg-amazon-orange hover:bg-amazon-orangeHover border-0"
               >
                 <option
                   *ngFor="let lang of i18n.getLanguages()"
                   [value]="lang.code"
                   [selected]="lang.code === i18n.language()"
+                  class="bg-amazon-card"
                 >
                   {{ lang.name }}
                 </option>
@@ -71,31 +139,29 @@ import { Coin } from '../models/coin.model';
           </div>
 
           <!-- Tabs -->
-          <div class="flex gap-6 text-sm border-t border-velvet-800 pt-2">
+          <div class="flex gap-4 text-xs border-t border-amazon-border pt-1">
             <button
-              (click)="setActiveTab('form')"
-              [class.text-white]="activeTab() === 'form'"
-              [class.border-b-2]="activeTab() === 'form'"
-              [class.border-velvet-500]="activeTab() === 'form'"
-              class="pb-1.5 text-velvet-500 hover:text-velvet-400 transition-colors font-semibold"
+              type="button"
+              (click)="openFormModal()"
+              class="pb-1 font-semibold bg-transparent text-amazon-textMuted hover:text-amazon-textLight border-0 px-0 py-0 rounded-none cursor-pointer"
             >
               {{ 'header.newCoin' | translate }}
             </button>
             <button
               (click)="setActiveTab('gallery')"
-              [class.text-white]="activeTab() === 'gallery'"
+              [class.text-amazon-textLight]="activeTab() === 'gallery'"
               [class.border-b-2]="activeTab() === 'gallery'"
-              [class.border-velvet-500]="activeTab() === 'gallery'"
-              class="pb-1.5 text-velvet-500 hover:text-velvet-400 transition-colors font-semibold"
+              [class.border-amazon-orange]="activeTab() === 'gallery'"
+              class="pb-1 btn-tab font-semibold"
             >
               {{ 'header.gallery' | translate }}
             </button>
             <button
               (click)="setActiveTab('tags')"
-              [class.text-white]="activeTab() === 'tags'"
+              [class.text-amazon-textLight]="activeTab() === 'tags'"
               [class.border-b-2]="activeTab() === 'tags'"
-              [class.border-velvet-500]="activeTab() === 'tags'"
-              class="pb-1.5 text-velvet-500 hover:text-velvet-400 transition-colors font-semibold"
+              [class.border-amazon-orange]="activeTab() === 'tags'"
+              class="pb-1 btn-tab font-semibold"
             >
               {{ 'header.tags' | translate }}
             </button>
@@ -104,21 +170,15 @@ import { Coin } from '../models/coin.model';
       </header>
 
       <!-- Main Content -->
-      <main class="relative max-w-7xl mx-auto px-4 py-3">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+      <main class="relative w-full px-3 py-1.5">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-3">
           <!-- Filters Sidebar -->
-          <aside class="lg:col-span-1 h-fit sticky top-16">
+          <aside class="lg:col-span-1 h-fit sticky top-12">
             <app-filters></app-filters>
           </aside>
 
           <!-- Content Area -->
-          <div class="lg:col-span-3">
-            <!-- Form Tab -->
-            <div *ngIf="activeTab() === 'form'">
-              <app-coin-form [coinToEdit]="coinToEdit()" (formReset)="onFormReset()">
-              </app-coin-form>
-            </div>
-
+          <div class="lg:col-span-4">
             <!-- Gallery Tab -->
             <div *ngIf="activeTab() === 'gallery'">
               <app-gallery
@@ -135,6 +195,100 @@ import { Coin } from '../models/coin.model';
           </div>
         </div>
       </main>
+
+      <!-- Form Modal -->
+      <div
+        [style.display]="showFormModal() ? 'flex' : 'none'"
+        [style.position]="'fixed'"
+        [style.inset]="'0'"
+        [style.zIndex]="'9999'"
+        [style.alignItems]="'center'"
+        [style.justifyContent]="'center'"
+        [style.backgroundColor]="'rgba(0, 0, 0, 0.5)'"
+        [style.width]="'100%'"
+        [style.height]="'100%'"
+        (click)="closeFormModal()"
+      >
+        <div
+          [style.backgroundColor]="'#0f1419'"
+          [style.borderRadius]="'0.5rem'"
+          [style.boxShadow]="'0 20px 25px -5px rgba(0, 0, 0, 0.1)'"
+          [style.maxWidth]="'42rem'"
+          [style.width]="'100%'"
+          [style.margin]="'0 1rem'"
+          [style.maxHeight]="'90vh'"
+          [style.overflowY]="'auto'"
+          [style.border]="'1px solid #3d464d'"
+          (click)="$event.stopPropagation()"
+        >
+          <div [style.padding]="'1rem'">
+            <app-coin-form [coinToEdit]="coinToEdit()" (formReset)="onFormReset()"> </app-coin-form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Credentials Modal -->
+      <div
+        *ngIf="showCredentialsModal()"
+        [style.position]="'fixed'"
+        [style.top]="'0'"
+        [style.left]="'0'"
+        [style.zIndex]="'50'"
+        [style.display]="'flex'"
+        [style.alignItems]="'center'"
+        [style.justifyContent]="'center'"
+        [style.backgroundColor]="'rgba(0, 0, 0, 0.5)'"
+        [style.width]="'100%'"
+        [style.height]="'100%'"
+        (click)="closeCredentialsModal()"
+      >
+        <div
+          [style.backgroundColor]="'#0f1419'"
+          [style.borderRadius]="'0.5rem'"
+          [style.boxShadow]="'0 20px 25px -5px rgba(0, 0, 0, 0.1)'"
+          [style.maxWidth]="'28rem'"
+          [style.width]="'100%'"
+          [style.margin]="'0 1rem'"
+          [style.border]="'1px solid #3d464d'"
+          (click)="$event.stopPropagation()"
+        >
+          <div [style.padding]="'1.5rem'">
+            <h2 class="text-lg font-semibold text-amazon-textLight mb-3">CouchDB Credentials</h2>
+
+            <div class="space-y-3">
+              <!-- Username Input -->
+              <div>
+                <label class="block text-xs text-amazon-textMuted mb-1">Username</label>
+                <input
+                  type="text"
+                  [(ngModel)]="credentialsUsername"
+                  class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-surface text-amazon-text"
+                  placeholder="Enter CouchDB username"
+                />
+              </div>
+
+              <!-- Password Input -->
+              <div>
+                <label class="block text-xs text-amazon-textMuted mb-1">Password</label>
+                <input
+                  type="password"
+                  [(ngModel)]="credentialsPassword"
+                  class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-surface text-amazon-text"
+                  placeholder="Enter CouchDB password"
+                />
+              </div>
+
+              <!-- Buttons -->
+              <div class="flex gap-2 pt-3">
+                <button (click)="closeCredentialsModal()" class="flex-1 btn-sm btn-secondary">
+                  Cancel
+                </button>
+                <button (click)="saveCredentials()" class="flex-1 btn-sm btn-primary">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Hidden file input for import -->
       <input
@@ -156,22 +310,71 @@ export class App {
   store = inject(CoinStore);
   tagService = inject(TagService);
   i18n = inject(I18nService);
+  syncService = inject(SyncService);
+  cdr = inject(ChangeDetectorRef);
 
-  activeTab = signal<'form' | 'gallery' | 'tags'>('gallery');
+  activeTab = signal<'gallery' | 'tags'>('gallery');
   coinToEdit = signal<Coin | null>(null);
+  showFormModal = signal(false);
+  showCredentialsModal = signal(false);
+  credentialsUsername = signal('');
+  credentialsPassword = signal('');
+
+  constructor() {
+    effect(() => {
+      this.showFormModal();
+      this.cdr.markForCheck();
+    });
+  }
 
   onLanguageChange(event: Event): void {
     const lang = (event.target as HTMLSelectElement).value as any;
     this.i18n.setLanguage(lang);
   }
 
-  setActiveTab(tab: 'form' | 'gallery' | 'tags'): void {
+  setActiveTab(tab: 'gallery' | 'tags'): void {
     this.activeTab.set(tab);
+  }
+
+  openFormModal(): void {
+    this.coinToEdit.set(null);
+    this.showFormModal.set(true);
+    this.cdr.markForCheck();
   }
 
   editCoin(coin: Coin): void {
     this.coinToEdit.set(coin);
-    this.activeTab.set('form');
+    this.showFormModal.set(true);
+    this.cdr.markForCheck();
+  }
+
+  closeFormModal(): void {
+    this.showFormModal.set(false);
+    this.coinToEdit.set(null);
+    this.cdr.markForCheck();
+  }
+
+  openCredentialsModal(): void {
+    this.credentialsUsername.set(this.syncService.username());
+    this.credentialsPassword.set(this.syncService.password());
+    this.showCredentialsModal.set(true);
+  }
+
+  closeCredentialsModal(): void {
+    this.showCredentialsModal.set(false);
+  }
+
+  saveCredentials(): void {
+    const username = this.credentialsUsername();
+    const password = this.credentialsPassword();
+
+    if (username && password) {
+      this.syncService.setCredentials(username, password);
+      this.closeCredentialsModal();
+      alert('CouchDB credentials saved successfully');
+    } else {
+      alert('Please enter both username and password');
+    }
   }
 
   deleteCoin(coinId: string): void {
@@ -180,6 +383,7 @@ export class App {
 
   onFormReset(): void {
     this.coinToEdit.set(null);
+    this.closeFormModal();
   }
 
   exportData(): void {
@@ -243,5 +447,21 @@ export class App {
       this.store.clearAll();
       this.tagService.clearAllTags();
     }
+  }
+
+  dismissSyncError(): void {
+    this.syncService.syncError.set(null);
+  }
+
+  syncNow(): void {
+    this.syncService.syncNow().catch((error) => {
+      console.error('Manual sync error:', error);
+    });
+  }
+
+  forceRefresh(): void {
+    this.syncService.forceFullRefresh().catch((error) => {
+      console.error('Force refresh error:', error);
+    });
   }
 }

@@ -1,6 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { CoinStore } from '../../services/coin.store';
+import { TagService } from '../../services/tag.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TagCategoryPipe, TagValuePipe } from '../../pipes/tag-format.pipe';
@@ -20,46 +22,60 @@ export class JoinPipe implements PipeTransform {
 @Component({
   selector: 'app-filters',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, TagCategoryPipe, TagValuePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, TagCategoryPipe, TagValuePipe],
   template: `
-    <div class="space-y-2 p-4 rounded-lg bg-velvet-800 border border-velvet-700 shadow-soft">
+    <div class="space-y-1 p-2 rounded bg-amazon-card border border-amazon-border shadow-xs">
       <!-- Header -->
-      <div class="flex items-center justify-between border-b border-velvet-700 pb-2">
-        <h3 class="text-sm font-display text-white">{{ 'filters.title' | translate }}</h3>
+      <div class="flex items-center justify-between border-b border-amazon-border pb-1">
+        <h3 class="text-xs font-display text-amazon-text">{{ 'filters.title' | translate }}</h3>
         <button
           *ngIf="store.selectedFilters().length > 0"
           (click)="clearFilters()"
-          class="text-xs px-2 py-0.5 bg-velvet-700/60 hover:bg-velvet-700 text-velvet-200 rounded-lg transition-colors font-medium"
+          class="text-xs btn-sm btn-danger"
         >
           {{ 'filters.clearAll' | translate }}
         </button>
       </div>
 
+      <!-- Search Input -->
+      <input
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Buscar categoria..."
+        class="w-full"
+      />
+
       <!-- Filter Groups -->
-      <div *ngIf="store.allTags().length > 0; else noTags" class="space-y-2">
+      <div *ngIf="filteredTagGroups().length > 0; else noTags" class="space-y-1">
         <div
-          *ngFor="let tagGroup of store.allTags()"
-          class="p-3 rounded-lg bg-velvet-900 border border-velvet-700"
+          *ngFor="let tagGroup of filteredTagGroups()"
+          class="p-1.5 rounded bg-amazon-surface border border-amazon-border"
         >
           <!-- Category Title -->
-          <h4 class="text-xs font-semibold text-white mb-2">
+          <h4 class="text-xs font-semibold text-amazon-text mb-1">
             {{ tagGroup.category | tagCategory }}
           </h4>
 
           <!-- Value Toggles -->
-          <div class="space-y-1.5">
+          <div class="space-y-1">
             <label
               *ngFor="let value of tagGroup.values"
-              class="flex items-center gap-2 cursor-pointer group"
+              class="flex items-center gap-1.5 cursor-pointer group"
             >
               <input
                 type="checkbox"
                 [checked]="isFilterActive(tagGroup.category, value)"
                 (change)="toggleFilter(tagGroup.category, value)"
-                class="w-3.5 h-3.5 rounded border-velvet-600 bg-velvet-800 checked:bg-velvet-600 cursor-pointer"
+                class="w-3 h-3 rounded border-amazon-border bg-amazon-surface checked:bg-amazon-orange cursor-pointer"
               />
-              <span class="text-xs text-velvet-300 group-hover:text-white transition-colors">
+              <span
+                class="text-xs text-amazon-textMuted group-hover:text-amazon-text transition-colors"
+              >
                 {{ value | tagValue }}
+                <span class="text-amazon-textMuted"
+                  >({{ countCoinsWithTag(tagGroup.category, value) }})</span
+                >
               </span>
             </label>
           </div>
@@ -68,7 +84,7 @@ export class JoinPipe implements PipeTransform {
 
       <!-- No Tags -->
       <ng-template #noTags>
-        <p class="text-velvet-500 text-xs italic text-center py-3 font-medium">
+        <p class="text-amazon-textMuted text-xs italic text-center py-2 font-medium">
           {{ 'filters.noTags' | translate }}
         </p>
       </ng-template>
@@ -76,17 +92,80 @@ export class JoinPipe implements PipeTransform {
       <!-- Active Filters Display -->
       <div
         *ngIf="store.selectedFilters().length > 0"
-        class="mt-2 p-3 rounded-lg bg-velvet-700/40 border border-velvet-700"
+        class="mt-1 p-1.5 rounded bg-amazon-surface border border-amazon-border"
       >
-        <p class="text-xs text-white mb-1.5 font-semibold">
+        <p class="text-xs text-amazon-text mb-1 font-semibold">
           {{ 'filters.activeFilters' | translate }}
         </p>
-        <div class="space-y-1">
-          <div *ngFor="let filter of store.selectedFilters()" class="text-xs text-velvet-300">
-            <span class="font-semibold">{{ filter.category | tagCategory }}:</span>
-            <span class="ml-2" *ngFor="let value of filter.values; let last = last"
+        <div class="space-y-0.5">
+          <div *ngFor="let filter of store.selectedFilters()" class="text-xs text-amazon-textMuted">
+            <span class="font-semibold text-amazon-orange"
+              >{{ filter.category | tagCategory }}:</span
+            >
+            <span class="ml-1" *ngFor="let value of filter.values; let last = last"
               >{{ value | tagValue }}<span *ngIf="!last">, </span></span
             >
+          </div>
+        </div>
+      </div>
+
+      <!-- Physical Characteristics Filters -->
+      <div class="p-1.5 rounded bg-amazon-surface border border-amazon-border space-y-2">
+        <h4 class="text-xs font-semibold text-amazon-text mb-1">
+          {{ 'filters.physicalTitle' | translate }}
+        </h4>
+
+        <!-- Weight Range -->
+        <div class="space-y-0.5">
+          <label class="block text-xs text-amazon-textMuted font-semibold">
+            {{ 'filters.weight' | translate }}
+          </label>
+          <div class="flex gap-1 items-center">
+            <input
+              type="number"
+              [ngModel]="weightRange().min"
+              (ngModelChange)="onWeightMinChange($event)"
+              class="flex-1 px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [min]="0"
+              [max]="store.getWeightRange().max"
+            />
+            <span class="text-xs text-amazon-textMuted">-</span>
+            <input
+              type="number"
+              [ngModel]="weightRange().max"
+              (ngModelChange)="onWeightMaxChange($event)"
+              class="flex-1 px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [min]="0"
+              [max]="store.getWeightRange().max"
+            />
+            <span class="text-xs text-amazon-textMuted whitespace-nowrap">g</span>
+          </div>
+        </div>
+
+        <!-- Diameter Range -->
+        <div class="space-y-0.5">
+          <label class="block text-xs text-amazon-textMuted font-semibold">
+            {{ 'filters.diameter' | translate }}
+          </label>
+          <div class="flex gap-1 items-center">
+            <input
+              type="number"
+              [ngModel]="diameterRange().min"
+              (ngModelChange)="onDiameterMinChange($event)"
+              class="flex-1 px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [min]="0"
+              [max]="store.getDiameterRange().max"
+            />
+            <span class="text-xs text-amazon-textMuted">-</span>
+            <input
+              type="number"
+              [ngModel]="diameterRange().max"
+              (ngModelChange)="onDiameterMaxChange($event)"
+              class="flex-1 px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [min]="0"
+              [max]="store.getDiameterRange().max"
+            />
+            <span class="text-xs text-amazon-textMuted whitespace-nowrap">mm</span>
           </div>
         </div>
       </div>
@@ -100,7 +179,53 @@ export class JoinPipe implements PipeTransform {
 })
 export class FiltersComponent {
   store = inject(CoinStore);
+  tagService = inject(TagService);
   i18n = inject(I18nService);
+
+  searchQuery = signal('');
+  weightRange = signal({ min: 0, max: 100 });
+  diameterRange = signal({ min: 0, max: 100 });
+
+  constructor() {
+    // Initialize ranges based on available data
+    const weightRange = this.store.getWeightRange();
+    const diameterRange = this.store.getDiameterRange();
+    this.weightRange.set({ min: 0, max: weightRange.max });
+    this.diameterRange.set({ min: 0, max: diameterRange.max });
+    this.store.setWeightRange(0, weightRange.max);
+    this.store.setDiameterRange(0, diameterRange.max);
+  }
+
+  filteredTagGroups = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    const allTags = this.store.allTags();
+
+    if (!query) {
+      return allTags;
+    }
+
+    return allTags
+      .map((tagGroup) => {
+        const categoryMatch = tagGroup.category.toLowerCase().includes(query);
+        const filteredValues = tagGroup.values.filter((value) =>
+          value.toLowerCase().includes(query),
+        );
+
+        // If category matches, show all values
+        if (categoryMatch) {
+          return tagGroup;
+        }
+
+        // If some values match, show only those values
+        if (filteredValues.length > 0) {
+          return { ...tagGroup, values: filteredValues };
+        }
+
+        // If neither category nor values match, filter out this group
+        return null;
+      })
+      .filter((tagGroup): tagGroup is (typeof allTags)[number] => tagGroup !== null);
+  });
 
   toggleFilter(category: string, value: string): void {
     this.store.toggleFilter(category, value);
@@ -108,11 +233,50 @@ export class FiltersComponent {
 
   clearFilters(): void {
     this.store.clearFilters();
+    const weightRange = this.store.getWeightRange();
+    const diameterRange = this.store.getDiameterRange();
+    this.weightRange.set({ min: 0, max: weightRange.max });
+    this.diameterRange.set({ min: 0, max: diameterRange.max });
+    this.store.setWeightRange(0, weightRange.max);
+    this.store.setDiameterRange(0, diameterRange.max);
+  }
+
+  onWeightMinChange(value: string | number): void {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    this.weightRange.update((range) => ({ ...range, min: numValue }));
+    this.store.setWeightRange(numValue, this.weightRange().max);
+  }
+
+  onWeightMaxChange(value: string | number): void {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    this.weightRange.update((range) => ({ ...range, max: numValue }));
+    this.store.setWeightRange(this.weightRange().min, numValue);
+  }
+
+  onDiameterMinChange(value: string | number): void {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    this.diameterRange.update((range) => ({ ...range, min: numValue }));
+    this.store.setDiameterRange(numValue, this.diameterRange().max);
+  }
+
+  onDiameterMaxChange(value: string | number): void {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    this.diameterRange.update((range) => ({ ...range, max: numValue }));
+    this.store.setDiameterRange(this.diameterRange().min, numValue);
   }
 
   isFilterActive(category: string, value: string): boolean {
     return this.store
       .selectedFilters()
       .some((f) => f.category === category && f.values.includes(value));
+  }
+
+  countCoinsWithTag(category: string, value: string): number {
+    return this.store.coins().filter((coin) =>
+      coin.tags.some((tagId) => {
+        const tag = this.tagService.getTag(tagId);
+        return tag && tag.category === category && tag.value === value;
+      }),
+    ).length;
   }
 }

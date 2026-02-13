@@ -5,8 +5,14 @@ export interface Tag {
 
 export interface Coin {
   id: string;
+  reference?: string;
   images: string[];
-  tags: Tag[];
+  tags: string[];
+  anvers?: string;
+  revers?: string;
+  general?: string;
+  weight?: number;
+  diameter?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -16,7 +16,6 @@ export class TagCategoryPipe implements PipeTransform {
 })
 export class TagValuePipe implements PipeTransform {
   transform(value: string): string {
-    if (!value) return value;
-    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    return value;
   }
 }

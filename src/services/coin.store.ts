@@ -1,30 +1,39 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { effect, signal, computed } from '@angular/core';
 import { Coin, CoinInput, Tag } from '../models/coin.model';
+import { TagService } from './tag.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CoinStore {
   private readonly STORAGE_KEY = 'numis-coins';
+  private tagService = inject(TagService);
 
   // Signals
   private coinsSignal = signal<Coin[]>(this.loadFromStorage());
   private selectedFiltersSignal = signal<{ category: string; values: string[] }[]>([]);
+  private weightRangeSignal = signal<{ min: number; max: number }>({ min: 0, max: 1000 });
+  private diameterRangeSignal = signal<{ min: number; max: number }>({ min: 0, max: 1000 });
 
   // Computed
   coins = this.coinsSignal.asReadonly();
   selectedFilters = this.selectedFiltersSignal.asReadonly();
+  weightRange = this.weightRangeSignal.asReadonly();
+  diameterRange = this.diameterRangeSignal.asReadonly();
 
   allTags = computed(() => {
     const tags = new Map<string, Set<string>>();
 
     this.coinsSignal().forEach((coin) => {
-      coin.tags.forEach((tag) => {
-        if (!tags.has(tag.category)) {
-          tags.set(tag.category, new Set());
+      coin.tags.forEach((tagId) => {
+        const tag = this.tagService.getTag(tagId);
+        if (tag) {
+          if (!tags.has(tag.category)) {
+            tags.set(tag.category, new Set());
+          }
+          tags.get(tag.category)!.add(tag.value);
         }
-        tags.get(tag.category)!.add(tag.value);
       });
     });
 
@@ -38,18 +47,32 @@ export class CoinStore {
 
   filteredCoins = computed(() => {
     const filters = this.selectedFiltersSignal();
+    const weightRange = this.weightRangeSignal();
+    const diameterRange = this.diameterRangeSignal();
 
-    if (filters.length === 0) {
-      return this.coinsSignal();
-    }
-
-    // AND logic: coin must have ALL selected tag combinations
     return this.coinsSignal().filter((coin) => {
-      return filters.every((filter) => {
-        return filter.values.some((value) =>
-          coin.tags.some((tag) => tag.category === filter.category && tag.value === value),
-        );
-      });
+      // Check tag filters
+      const tagsMatch =
+        filters.length === 0 ||
+        filters.every((filter) => {
+          return filter.values.some((value) => {
+            return coin.tags.some((tagId) => {
+              const tag = this.tagService.getTag(tagId);
+              return tag && tag.category === filter.category && tag.value === value;
+            });
+          });
+        });
+
+      // Check weight range
+      const weightMatches =
+        !coin.weight || (coin.weight >= weightRange.min && coin.weight <= weightRange.max);
+
+      // Check diameter range
+      const diameterMatches =
+        !coin.diameter ||
+        (coin.diameter >= diameterRange.min && coin.diameter <= diameterRange.max);
+
+      return tagsMatch && weightMatches && diameterMatches;
     });
   });
 
@@ -89,6 +112,23 @@ export class CoinStore {
     return this.coinsSignal().find((coin) => coin.id === id);
   }
 
+  getNextReference(): string {
+    const references = this.coinsSignal()
+      .map((coin) => coin.reference)
+      .filter((ref): ref is string => !!ref && ref.match(/^M\d{5}$/) !== null);
+
+    if (references.length === 0) {
+      return 'M00001';
+    }
+
+    // Extract the numeric part, find the max, and increment
+    const numbers = references.map((ref) => parseInt(ref.substring(1), 10));
+    const maxNumber = Math.max(...numbers);
+    const nextNumber = Math.min(maxNumber + 1, 99999);
+
+    return `M${String(nextNumber).padStart(5, '0')}`;
+  }
+
   // Filter operations
   toggleFilter(category: string, value: string): void {
     this.selectedFiltersSignal.update((filters) => {
@@ -117,6 +157,44 @@ export class CoinStore {
 
   clearFilters(): void {
     this.selectedFiltersSignal.set([]);
+  }
+
+  setWeightRange(min: number, max: number): void {
+    this.weightRangeSignal.set({ min, max });
+  }
+
+  setDiameterRange(min: number, max: number): void {
+    this.diameterRangeSignal.set({ min, max });
+  }
+
+  getWeightRange(): { min: number; max: number } {
+    const weights = this.coinsSignal()
+      .map((coin) => coin.weight)
+      .filter((w): w is number => w !== undefined);
+
+    if (weights.length === 0) {
+      return { min: 0, max: 100 };
+    }
+
+    return {
+      min: Math.floor(Math.min(...weights)),
+      max: Math.ceil(Math.max(...weights)),
+    };
+  }
+
+  getDiameterRange(): { min: number; max: number } {
+    const diameters = this.coinsSignal()
+      .map((coin) => coin.diameter)
+      .filter((d): d is number => d !== undefined);
+
+    if (diameters.length === 0) {
+      return { min: 0, max: 100 };
+    }
+
+    return {
+      min: Math.floor(Math.min(...diameters)),
+      max: Math.ceil(Math.max(...diameters)),
+    };
   }
 
   // Import/Export

@@ -61,6 +61,10 @@ export class TagService {
     return this.tagsSignal().find((t) => t.id === id);
   }
 
+  getTags(): TagTemplate[] {
+    return this.tagsSignal();
+  }
+
   exportTags(): string {
     return JSON.stringify(this.tagsSignal(), null, 2);
   }
@@ -84,6 +88,22 @@ export class TagService {
       this.tagsSignal.set([...this.tagsSignal(), ...newTags]);
     } catch (error) {
       throw new Error('Error importing tags: ' + (error as Error).message);
+    }
+  }
+
+  replaceTags(jsonData: string): void {
+    try {
+      const imported = JSON.parse(jsonData) as TagTemplate[];
+
+      // Validate structure
+      if (!Array.isArray(imported)) {
+        throw new Error('Invalid format');
+      }
+
+      // Replace all tags with the new ones (without reassigning IDs)
+      this.tagsSignal.set(imported);
+    } catch (error) {
+      throw new Error('Error replacing tags: ' + (error as Error).message);
     }
   }
 

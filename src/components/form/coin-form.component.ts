@@ -13,74 +13,97 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe, TagCategoryPipe, TagValuePipe],
   template: `
-    <div class="p-4 rounded-lg border border-velvet-700 bg-velvet-800 shadow-soft">
+    <div class="p-2 rounded border border-amazon-border bg-amazon-card shadow-sm">
       <!-- Header -->
-      <h3 class="text-xl font-display text-white mb-4">
+      <h3 class="text-base font-display text-amazon-textLight mb-2">
         {{ editingCoin() ? ('form.editCoin' | translate) : ('form.newCoin' | translate) }}
       </h3>
 
-      <form (ngSubmit)="submitForm()" class="space-y-3">
+      <form (ngSubmit)="submitForm()" class="space-y-1.5">
+        <!-- Reference Field -->
+        <div class="space-y-0.5">
+          <label class="text-xs font-semibold text-amazon-text">
+            {{ 'form.reference' | translate }}
+          </label>
+          <input
+            type="text"
+            [ngModel]="reference()"
+            (ngModelChange)="reference.set($event)"
+            name="reference"
+            maxlength="10"
+            class="w-full"
+            placeholder="e.g., ABC-123-XYZ"
+          />
+        </div>
+
         <!-- Images Section -->
-        <fieldset class="border border-velvet-700 p-3 rounded-lg bg-velvet-900 space-y-2">
-          <legend class="text-xs font-semibold text-white px-2">
+        <fieldset class="border border-amazon-border p-1.5 rounded bg-amazon-surface space-y-1">
+          <legend class="text-xs font-semibold text-amazon-text px-1">
             {{ 'form.imagesTitle' | translate }}
           </legend>
 
-          <div *ngFor="let i of [0, 1]; trackBy: trackByImage" class="space-y-1.5">
-            <label class="block text-xs text-velvet-300">
-              {{ 'form.image' | translate }} {{ i + 1 }}
-              <span *ngIf="i === 0" class="text-velvet-400 font-medium"
-                >({{ 'form.required' | translate }})</span
+          <div class="space-y-2">
+            <!-- Images list -->
+            <div
+              *ngFor="let i of imageIndices(); let isLast = last; trackBy: trackByImage"
+              class="flex gap-2 items-center"
+            >
+              <!-- Thumbnail placeholder -->
+              <div
+                class="relative rounded border border-amazon-border bg-amazon-surface p-0.5 flex-shrink-0 flex items-center justify-center"
+                [style.width]="'60px'"
+                [style.height]="'60px'"
               >
-            </label>
-            <input
-              type="url"
-              [(ngModel)]="images()[i]"
-              [name]="'image' + i"
-              [placeholder]="i18n.t('form.imagePlaceholder')"
-              class="w-full px-3 py-2 bg-velvet-800 border border-velvet-700 rounded-lg text-white placeholder-velvet-500 focus:outline-none focus:border-velvet-600 focus:ring-2 focus:ring-velvet-700"
-            />
-            <p class="text-xs text-velvet-500">
-              {{ images()[i] ? ('form.validUrl' | translate) : ('form.optional' | translate) }}
-            </p>
+                <img
+                  *ngIf="images()[i]?.trim()"
+                  [src]="images()[i]"
+                  [alt]="'Thumbnail'"
+                  class="w-full h-full rounded"
+                  [style.objectFit]="'cover'"
+                  (error)="onImageError(i)"
+                />
+                <span *ngIf="!images()[i]?.trim()" class="text-2xl text-amazon-textMuted">📷</span>
+              </div>
+
+              <!-- Input -->
+              <input type="url" [(ngModel)]="images()[i]" [name]="'image' + i" class="flex-1" />
+
+              <!-- Delete button -->
+              <button
+                *ngIf="images().length > 1"
+                type="button"
+                (click)="removeImage(i)"
+                class="btn-sm bg-transparent text-amazon-orange hover:text-amazon-text px-1.5 flex-shrink-0"
+              >
+                ✕
+              </button>
+
+              <!-- Add button (on last row) -->
+              <button
+                *ngIf="isLast"
+                type="button"
+                (click)="addImage()"
+                [disabled]="!images()[i]?.trim()"
+                class="btn-sm bg-transparent text-amazon-orange hover:text-amazon-text px-1.5 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+            </div>
           </div>
         </fieldset>
 
         <!-- Tags Section -->
-        <fieldset class="border border-velvet-700 p-3 rounded-lg bg-velvet-900 space-y-2">
-          <legend class="text-xs font-semibold text-white px-2">
+        <fieldset class="border border-amazon-border p-1.5 rounded bg-amazon-surface space-y-1">
+          <legend class="text-xs font-semibold text-amazon-text px-1">
             {{ 'form.tagsTitle' | translate }}
           </legend>
 
-          <!-- Existing Tags -->
-          <div *ngIf="tags().length > 0" class="space-y-1.5">
-            <p class="text-xs text-velvet-400 mb-2 font-medium">
-              {{ 'form.addedTags' | translate }}
-            </p>
-            <div
-              *ngFor="let tag of tags(); let i = index"
-              class="flex items-center gap-2 p-2.5 bg-velvet-800 rounded-lg border border-velvet-700"
-            >
-              <span class="flex-1 text-xs text-white">
-                <span class="font-semibold text-velvet-300">{{ tag.category | tagCategory }}:</span>
-                {{ tag.value | tagValue }}
-              </span>
-              <button
-                type="button"
-                (click)="removeTag(i)"
-                class="px-2.5 py-1 text-xs bg-velvet-700/60 hover:bg-velvet-700 text-velvet-200 rounded-lg transition-colors font-medium"
-              >
-                {{ 'form.remove' | translate }}
-              </button>
-            </div>
-          </div>
-
           <!-- Add Tag Form -->
-          <div class="border-t border-velvet-700 pt-2.5 space-y-2">
-            <p class="text-xs text-velvet-400 font-medium">{{ 'form.addTag' | translate }}</p>
-            <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-1">
+            <p class="text-xs text-amazon-textMuted font-medium">{{ 'form.addTag' | translate }}</p>
+            <div class="grid grid-cols-2 gap-1 items-end">
               <!-- Category input with autocomplete -->
-              <div class="relative">
+              <div class="relative w-full">
                 <input
                   type="text"
                   [(ngModel)]="newTag().category"
@@ -88,19 +111,18 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
                   (focus)="showCategorySuggestions.set(true)"
                   (blur)="onCategoryBlur()"
                   name="tagCategory"
-                  [placeholder]="i18n.t('form.tagCategoryPlaceholder')"
-                  class="w-full px-3 py-1.5 bg-velvet-800 border border-velvet-700 rounded-lg text-xs text-white placeholder-velvet-500 focus:outline-none focus:border-velvet-600 focus:ring-2 focus:ring-velvet-700"
+                  class="w-full"
                 />
                 <!-- Suggestions Dropdown for Categories -->
                 <div
                   *ngIf="showCategorySuggestions() && categorySuggestions().length > 0"
-                  class="absolute z-10 top-full mt-1 w-full bg-velvet-800 border border-velvet-700 rounded-lg shadow-lg max-h-32 overflow-y-auto"
+                  class="absolute z-10 top-full mt-0.5 w-full bg-amazon-card border border-amazon-border rounded shadow-lg max-h-24 overflow-y-auto"
                 >
                   <button
                     *ngFor="let cat of categorySuggestions()"
                     type="button"
                     (click)="selectCategory(cat)"
-                    class="w-full px-3 py-1.5 text-left text-xs text-velvet-200 hover:bg-velvet-700 transition-colors border-b border-velvet-700 last:border-b-0"
+                    class="w-full px-2 py-1 text-left text-xs text-amazon-text hover:bg-amazon-surface transition-colors border-b border-amazon-border last:border-b-0"
                   >
                     {{ cat }}
                   </button>
@@ -108,7 +130,7 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
               </div>
 
               <!-- Value input with autocomplete -->
-              <div class="relative">
+              <div class="relative w-full">
                 <input
                   type="text"
                   [(ngModel)]="newTag().value"
@@ -116,54 +138,143 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
                   (focus)="showValueSuggestions.set(newTag().category.trim().length > 0)"
                   (blur)="onValueBlur()"
                   name="tagValue"
-                  [placeholder]="i18n.t('form.tagValuePlaceholder')"
                   [disabled]="!newTag().category.trim()"
-                  class="w-full px-3 py-1.5 bg-velvet-800 border border-velvet-700 rounded-lg text-xs text-white placeholder-velvet-500 focus:outline-none focus:border-velvet-600 focus:ring-2 focus:ring-velvet-700 disabled:bg-velvet-900/40 disabled:text-velvet-600"
+                  class="w-full"
                 />
                 <!-- Suggestions Dropdown for Values -->
                 <div
                   *ngIf="showValueSuggestions() && valueSuggestions().length > 0"
-                  class="absolute z-10 top-full mt-1 w-full bg-velvet-800 border border-velvet-700 rounded-lg shadow-lg max-h-32 overflow-y-auto"
+                  class="absolute z-10 top-full mt-0.5 w-full bg-amazon-card border border-amazon-border rounded shadow-lg max-h-24 overflow-y-auto"
                 >
                   <button
                     *ngFor="let val of valueSuggestions()"
                     type="button"
                     (click)="selectValue(val)"
-                    class="w-full px-3 py-1.5 text-left text-xs text-velvet-200 hover:bg-velvet-700 transition-colors border-b border-velvet-700 last:border-b-0"
+                    class="w-full px-2 py-1 text-left text-xs text-amazon-text hover:bg-amazon-surface transition-colors border-b border-amazon-border last:border-b-0"
                   >
                     {{ val }}
                   </button>
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              (click)="addTag()"
-              [disabled]="!newTag().category.trim() || !newTag().value.trim()"
-              class="w-full px-3 py-1.5 bg-velvet-700 hover:bg-velvet-600 disabled:bg-velvet-700/40 disabled:cursor-not-allowed text-white disabled:text-velvet-600 rounded-lg transition-colors text-xs font-semibold"
-            >
-              {{ 'form.submitAddTag' | translate }}
-            </button>
+          </div>
+
+          <!-- Existing Tags -->
+          <div *ngIf="tags().length > 0" class="border-t border-amazon-border pt-1 space-y-1">
+            <p class="text-xs text-amazon-textMuted mb-2 font-medium">
+              {{ 'form.addedTags' | translate }}
+            </p>
+            <div class="flex flex-wrap gap-1">
+              <div
+                *ngFor="let tagId of tags(); let i = index"
+                class="inline-flex items-center gap-1 px-2 py-1 bg-amazon-orangeActive text-white rounded-full text-xs font-medium"
+              >
+                <span *ngIf="getTagInfo(tagId) as tagInfo">
+                  {{ tagInfo.category | tagCategory }}:
+                  {{ tagInfo.value | tagValue }}
+                </span>
+                <button
+                  type="button"
+                  (click)="removeTag(i)"
+                  class="ml-0.5 bg-transparent text-white hover:opacity-70 transition-opacity flex items-center justify-center w-4 h-4"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
           </div>
         </fieldset>
 
-        <!-- Actions -->
-        <div class="flex gap-2 pt-2">
-          <button
-            type="submit"
-            [disabled]="!images()[0].trim()"
-            class="flex-1 px-4 py-2 bg-velvet-700 hover:bg-velvet-600 disabled:bg-velvet-700/40 disabled:cursor-not-allowed text-white disabled:text-velvet-600 rounded-lg font-semibold transition-colors text-xs"
-          >
+        <!-- Description Fields -->
+        <fieldset class="border border-amazon-border p-1.5 rounded bg-amazon-surface space-y-1">
+          <legend class="text-xs font-semibold text-amazon-text px-1">
+            {{ 'form.descriptionsTitle' | translate }}
+          </legend>
+
+          <!-- Anvers -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.anvers' | translate }}
+            </label>
+            <textarea
+              [ngModel]="anvers()"
+              (ngModelChange)="anvers.set($event)"
+              name="anvers"
+              class="w-full min-h-[60px] resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Revers -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.revers' | translate }}
+            </label>
+            <textarea
+              [ngModel]="revers()"
+              (ngModelChange)="revers.set($event)"
+              name="revers"
+              class="w-full min-h-[60px] resize-none"
+            ></textarea>
+          </div>
+
+          <!-- General -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.general' | translate }}
+            </label>
+            <textarea
+              [ngModel]="general()"
+              (ngModelChange)="general.set($event)"
+              name="general"
+              class="w-full min-h-[60px] resize-none"
+            ></textarea>
+          </div>
+        </fieldset>
+        <fieldset class="border border-amazon-border p-1.5 rounded bg-amazon-surface space-y-1">
+          <legend class="text-xs font-semibold text-amazon-text px-1">
+            {{ 'form.physicalTitle' | translate }}
+          </legend>
+
+          <!-- Weight -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.weight' | translate }}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              [ngModel]="weight()"
+              (ngModelChange)="weight.set($event)"
+              name="weight"
+              class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [placeholder]="'form.weightPlaceholder' | translate"
+            />
+          </div>
+
+          <!-- Diameter -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.diameter' | translate }}
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              [ngModel]="diameter()"
+              (ngModelChange)="diameter.set($event)"
+              name="diameter"
+              class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [placeholder]="'form.diameterPlaceholder' | translate"
+            />
+          </div>
+        </fieldset>
+        <div class="flex gap-1 pt-1 justify-end">
+          <button type="button" (click)="resetForm()" class="btn-sm btn-secondary">
+            {{ 'form.cancel' | translate }}
+          </button>
+          <button type="submit" class="btn-sm btn-primary">
             {{
               editingCoin() ? ('form.submitUpdate' | translate) : ('form.submitCreate' | translate)
             }}
-          </button>
-          <button
-            type="button"
-            (click)="resetForm()"
-            class="flex-1 px-4 py-2 bg-velvet-700/60 hover:bg-velvet-700 text-velvet-200 rounded-lg font-semibold transition-colors text-xs"
-          >
-            {{ 'form.cancel' | translate }}
           </button>
         </div>
       </form>
@@ -184,10 +295,21 @@ export class CoinFormComponent {
   formReset = output<void>();
 
   // Form state
-  images = signal(['', '']);
-  tags = signal<Tag[]>([]);
+  images = signal<string[]>(['']);
+  tags = signal<string[]>([]);
   newTag = signal({ category: '', value: '' });
+  reference = signal('');
+  anvers = signal('');
+  revers = signal('');
+  general = signal('');
+  weight = signal('');
+  diameter = signal('');
   editingCoin = signal<Coin | null>(null);
+
+  // Computed indices for images
+  imageIndices = computed(() => {
+    return Array.from({ length: this.images().length }, (_, i) => i);
+  });
 
   // Typeahead state
   showCategorySuggestions = signal(false);
@@ -195,13 +317,46 @@ export class CoinFormComponent {
 
   // Computed suggestions
   categorySuggestions = computed(() => {
-    return this.tagService.searchCategories(this.newTag().category);
+    const allCategories = this.tagService.searchCategories(this.newTag().category);
+    // Filter out categories that don't have any available values
+    // AND filter out categories that already have all values used in this coin's tags
+    return allCategories.filter((category) => {
+      const availableValues = this.tagService.searchValuesByCategory(category, '');
+      if (availableValues.length === 0) return false;
+
+      // Check if there are any values in this category not yet used in current tags
+      const usedValuesInCategory: string[] = [];
+      this.tags().forEach((tagId) => {
+        const tag = this.tagService.getTag(tagId);
+        if (tag && tag.category === category) {
+          usedValuesInCategory.push(tag.value);
+        }
+      });
+
+      const unusedValues = availableValues.filter((val) => !usedValuesInCategory.includes(val));
+      return unusedValues.length > 0;
+    });
   });
 
   valueSuggestions = computed(() => {
     const category = this.newTag().category.trim();
     if (!category) return [];
-    return this.tagService.searchValuesByCategory(category, this.newTag().value);
+    const suggestions = this.tagService.searchValuesByCategory(category, this.newTag().value);
+    // Filter out values that already exist as tags with the current category
+    return suggestions.filter((value) => {
+      return !this.tags().some((tagId) => {
+        const tag = this.tagService.getTag(tagId);
+        return tag && tag.category === category && tag.value === value;
+      });
+    });
+  });
+
+  isTagDuplicate = computed(() => {
+    const { category, value } = this.newTag();
+    return this.tags().some((tagId) => {
+      const tag = this.tagService.getTag(tagId);
+      return tag && tag.category === category.trim() && tag.value === value.trim();
+    });
   });
 
   constructor() {
@@ -210,8 +365,14 @@ export class CoinFormComponent {
       const coin = this.coinToEdit();
       if (coin) {
         this.editingCoin.set(coin);
-        this.images.set([...coin.images, ...Array(2 - coin.images.length).fill('')]);
+        this.images.set([...coin.images, '']);
         this.tags.set([...coin.tags]);
+        this.reference.set(coin.reference || '');
+        this.anvers.set(coin.anvers || '');
+        this.revers.set(coin.revers || '');
+        this.general.set(coin.general || '');
+        this.weight.set(coin.weight ? String(coin.weight) : '');
+        this.diameter.set(coin.diameter ? String(coin.diameter) : '');
       } else {
         this.resetForm();
       }
@@ -244,31 +405,62 @@ export class CoinFormComponent {
   selectValue(value: string): void {
     this.newTag.update((tag) => ({ ...tag, value }));
     this.showValueSuggestions.set(false);
+    // Auto-add tag when value is selected
+    setTimeout(() => this.addTag(), 0);
   }
 
   addTag(): void {
     const tag = this.newTag();
     if (tag.category.trim() && tag.value.trim()) {
-      this.tags.update((t) => [...t, { category: tag.category.trim(), value: tag.value.trim() }]);
-      this.newTag.set({ category: '', value: '' });
+      // Find the tag ID from TagService
+      const matchingTag = this.tagService
+        .tags()
+        .find((t) => t.category === tag.category.trim() && t.value === tag.value.trim());
+      if (matchingTag) {
+        this.tags.update((t) => [...t, matchingTag.id]);
+        this.newTag.set({ category: '', value: '' });
+      }
     }
+  }
+
+  getTagInfo(tagId: string): { category: string; value: string } | null {
+    return this.tagService.getTag(tagId) || null;
   }
 
   removeTag(index: number): void {
     this.tags.update((t) => t.filter((_, i) => i !== index));
   }
 
+  addImage(): void {
+    // Only add a new image if the last one is not empty
+    const lastImage = this.images()[this.images().length - 1];
+    if (lastImage?.trim().length > 0) {
+      this.images.update((imgs) => [...imgs, '']);
+    }
+  }
+
+  removeImage(index: number): void {
+    this.images.update((imgs) => imgs.filter((_, i) => i !== index));
+  }
+
+  onImageError(index: number): void {
+    console.warn(`Image at index ${index} failed to load`);
+  }
+
   submitForm(): void {
     const imageUrls = this.images().filter((img) => img.trim());
-
-    if (imageUrls.length === 0) {
-      alert(this.i18n.t('form.errorImage'));
-      return;
-    }
+    const weightValue = String(this.weight()).trim();
+    const diameterValue = String(this.diameter()).trim();
 
     const coinInput: CoinInput = {
+      reference: this.reference().trim() || undefined,
       images: imageUrls,
       tags: this.tags(),
+      anvers: this.anvers().trim() || undefined,
+      revers: this.revers().trim() || undefined,
+      general: this.general().trim() || undefined,
+      weight: weightValue ? parseFloat(weightValue) : undefined,
+      diameter: diameterValue ? parseFloat(diameterValue) : undefined,
     };
 
     if (this.editingCoin()) {
@@ -282,9 +474,15 @@ export class CoinFormComponent {
 
   resetForm(): void {
     this.editingCoin.set(null);
-    this.images.set(['', '']);
+    this.images.set(['']);
     this.tags.set([]);
     this.newTag.set({ category: '', value: '' });
+    this.reference.set(this.store.getNextReference());
+    this.anvers.set('');
+    this.revers.set('');
+    this.general.set('');
+    this.weight.set('');
+    this.diameter.set('');
     this.formReset.emit();
   }
 

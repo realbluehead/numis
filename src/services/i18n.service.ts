@@ -53,6 +53,31 @@ export class I18nService {
       es: 'Etiquetas',
       en: 'Tags',
     },
+    'header.saveLocal': {
+      ca: 'Guardar Local',
+      es: 'Guardar Local',
+      en: 'Save Local',
+    },
+    'header.sync': {
+      ca: 'Sincronitzar',
+      es: 'Sincronizar',
+      en: 'Sync',
+    },
+    'header.syncing': {
+      ca: 'Sincronitzant...',
+      es: 'Sincronizando...',
+      en: 'Syncing...',
+    },
+    'header.lastSync': {
+      ca: 'Última sincronització',
+      es: 'Última sincronización',
+      en: 'Last sync',
+    },
+    'header.neverSynced': {
+      ca: 'Sense sincronitzar',
+      es: 'Sin sincronizar',
+      en: 'Never synced',
+    },
 
     // Gallery
     'gallery.title': {
@@ -117,6 +142,21 @@ export class I18nService {
       es: 'Filtros activos (lógica AND):',
       en: 'Active filters (AND logic):',
     },
+    'filters.physicalTitle': {
+      ca: 'Característiques Físiques',
+      es: 'Características Físicas',
+      en: 'Physical Characteristics',
+    },
+    'filters.weight': {
+      ca: 'Pes (g)',
+      es: 'Peso (g)',
+      en: 'Weight (g)',
+    },
+    'filters.diameter': {
+      ca: 'Diàmetre (mm)',
+      es: 'Diámetro (mm)',
+      en: 'Diameter (mm)',
+    },
 
     // Form
     'form.newCoin': {
@@ -129,10 +169,20 @@ export class I18nService {
       es: 'Editar Moneda',
       en: 'Edit Coin',
     },
+    'form.reference': {
+      ca: 'Referència',
+      es: 'Referencia',
+      en: 'Reference',
+    },
     'form.imagesTitle': {
-      ca: 'Imatges (màx. 2 URLs)',
-      es: 'Imágenes (máx. 2 URLs)',
-      en: 'Images (max. 2 URLs)',
+      ca: 'Imatges',
+      es: 'Imágenes',
+      en: 'Images',
+    },
+    'form.addImage': {
+      ca: 'Afegir imatge',
+      es: 'Añadir imagen',
+      en: 'Add image',
     },
     'form.imageLabel': {
       ca: 'Imatge %index%',
@@ -199,10 +249,55 @@ export class I18nService {
       es: '+ Añadir Etiqueta',
       en: '+ Add Tag',
     },
+    'form.descriptionsTitle': {
+      ca: 'Descripcions',
+      es: 'Descripciones',
+      en: 'Descriptions',
+    },
+    'form.anvers': {
+      ca: 'Anvers',
+      es: 'Anverso',
+      en: 'Obverse',
+    },
+    'form.revers': {
+      ca: 'Revers',
+      es: 'Reverso',
+      en: 'Reverse',
+    },
+    'form.general': {
+      ca: 'General',
+      es: 'General',
+      en: 'General',
+    },
+    'form.physicalTitle': {
+      ca: 'Característiques Físiques',
+      es: 'Características Físicas',
+      en: 'Physical Characteristics',
+    },
+    'form.weight': {
+      ca: 'Pes (g)',
+      es: 'Peso (g)',
+      en: 'Weight (g)',
+    },
+    'form.weightPlaceholder': {
+      ca: 'Ex: 5.5',
+      es: 'Ej: 5.5',
+      en: 'E.g: 5.5',
+    },
+    'form.diameter': {
+      ca: 'Diàmetre (mm)',
+      es: 'Diámetro (mm)',
+      en: 'Diameter (mm)',
+    },
+    'form.diameterPlaceholder': {
+      ca: 'Ex: 25.5',
+      es: 'Ej: 25.5',
+      en: 'E.g: 25.5',
+    },
     'form.submitCreate': {
-      ca: 'Crear Moneda',
-      es: 'Crear Moneda',
-      en: 'Create Coin',
+      ca: 'Afegir Moneda',
+      es: 'Añadir Moneda',
+      en: 'Add Coin',
     },
     'form.submitUpdate': {
       ca: 'Actualitzar Moneda',
@@ -235,6 +330,16 @@ export class I18nService {
       ca: 'Estàs segur? Això eliminarà TOTES les monedes de forma permanent.',
       es: '¿Estás seguro? Esto eliminará TODAS las monedas de forma permanente.',
       en: 'Are you sure? This will permanently delete ALL coins.',
+    },
+    'message.syncLocalSuccess': {
+      ca: 'Saved to local PouchDB successfully',
+      es: 'Guardado en PouchDB local con éxito',
+      en: 'Saved to local PouchDB successfully',
+    },
+    'message.syncServerSuccess': {
+      ca: 'Synced with CouchDB successfully',
+      es: 'Sincronizado con CouchDB con éxito',
+      en: 'Synced with CouchDB successfully',
     },
 
     // Language selector

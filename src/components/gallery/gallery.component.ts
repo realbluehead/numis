@@ -1,6 +1,7 @@
 import { Component, inject, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CoinStore } from '../../services/coin.store';
+import { TagService } from '../../services/tag.service';
 import { I18nService } from '../../services/i18n.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TagCategoryPipe, TagValuePipe } from '../../pipes/tag-format.pipe';
@@ -11,13 +12,13 @@ import { Coin } from '../../models/coin.model';
   standalone: true,
   imports: [CommonModule, TranslatePipe, TagCategoryPipe, TagValuePipe],
   template: `
-    <div class="space-y-3">
+    <div class="space-y-1.5">
       <!-- Header -->
-      <div class="border-b border-velvet-800 pb-3">
-        <h2 class="text-2xl font-display text-white mb-1">
+      <div class="border-b border-amazon-border pb-1.5">
+        <h2 class="text-lg font-display text-amazon-textLight mb-0.5">
           {{ 'gallery.title' | translate }}
         </h2>
-        <p class="text-velvet-400 text-xs font-medium">
+        <p class="text-amazon-textMuted text-xs font-medium">
           {{ store.filteredCoins().length }} {{ 'gallery.coinsCount' | translate }}
         </p>
       </div>
@@ -25,55 +26,51 @@ import { Coin } from '../../models/coin.model';
       <!-- Gallery Grid -->
       <div
         *ngIf="store.filteredCoins().length > 0; else emptyState"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3"
+        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-1.5"
       >
         <div
           *ngFor="let coin of store.filteredCoins()"
-          class="group relative rounded-lg overflow-hidden bg-velvet-800 border border-velvet-700 shadow-soft hover:shadow-gentle transition-all duration-300 cursor-pointer hover:border-velvet-600"
+          class="group relative rounded overflow-hidden bg-amazon-card border border-amazon-border shadow-xs hover:shadow-sm transition-all duration-200 cursor-pointer hover:border-amazon-orange"
           (click)="selectCoin(coin)"
         >
           <!-- Image Container -->
           <div
-            class="aspect-video overflow-hidden bg-velvet-900 relative flex items-center justify-center"
+            class="aspect-video overflow-hidden bg-amazon-surface relative flex items-center justify-center"
           >
             <img
               *ngIf="coin.images.length > 0"
               [src]="coin.images[0]"
               alt="Moneda"
-              class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+              class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
             />
             <div
               *ngIf="coin.images.length === 0"
-              class="w-full h-full flex items-center justify-center text-velvet-700"
+              class="w-full h-full flex items-center justify-center text-amazon-textMuted"
             >
               <span class="text-xs font-medium">{{ 'gallery.noImage' | translate }}</span>
             </div>
           </div>
 
           <!-- Info Overlay -->
-          <div class="p-3 space-y-2 bg-gradient-to-b from-velvet-800 to-velvet-900">
+          <div class="p-1.5 space-y-1 bg-amazon-card">
             <!-- Tags -->
-            <div class="flex flex-wrap gap-1.5">
+            <div class="flex flex-wrap gap-1">
               <span
-                *ngFor="let tag of coin.tags"
-                class="inline-block text-xs px-2 py-0.5 bg-velvet-700/60 text-velvet-200 rounded-full border border-velvet-600 font-medium"
+                *ngFor="let tagId of coin.tags"
+                class="inline-block text-xs px-1.5 py-0.5 badge"
               >
-                {{ tag.category | tagCategory }}: {{ tag.value | tagValue }}
+                <ng-container *ngIf="getTagInfo(tagId) as tagInfo">
+                  {{ tagInfo.category | tagCategory }}: {{ tagInfo.value | tagValue }}
+                </ng-container>
               </span>
             </div>
 
             <!-- Actions -->
-            <div class="flex gap-1.5 pt-1.5 border-t border-velvet-700">
-              <button
-                (click)="editCoin($event, coin)"
-                class="flex-1 px-2.5 py-1.5 text-xs bg-velvet-700 hover:bg-velvet-600 text-white rounded-lg transition-colors font-medium"
-              >
+            <div class="flex gap-1 pt-1 divider">
+              <button (click)="editCoin($event, coin)" class="flex-1 btn-sm btn-primary">
                 {{ 'gallery.edit' | translate }}
               </button>
-              <button
-                (click)="deleteCoin($event, coin.id)"
-                class="flex-1 px-2.5 py-1.5 text-xs bg-velvet-700/60 hover:bg-velvet-700 text-velvet-200 rounded-lg transition-colors font-medium"
-              >
+              <button (click)="deleteCoin($event, coin.id)" class="flex-1 btn-sm btn-danger">
                 {{ 'gallery.delete' | translate }}
               </button>
             </div>
@@ -82,7 +79,7 @@ import { Coin } from '../../models/coin.model';
           <!-- Multi-image indicator -->
           <div
             *ngIf="coin.images.length > 1"
-            class="absolute top-2 right-2 bg-velvet-700/90 text-white text-xs px-2 py-0.5 rounded-full font-medium"
+            class="absolute top-1 right-1 bg-amazon-surface/90 text-amazon-text text-xs px-1.5 py-0.5 rounded-full font-medium"
           >
             +{{ coin.images.length - 1 }}
           </div>
@@ -92,12 +89,12 @@ import { Coin } from '../../models/coin.model';
       <!-- Empty State -->
       <ng-template #emptyState>
         <div
-          class="flex flex-col items-center justify-center py-12 px-6 rounded-lg border-2 border-dashed border-velvet-700 bg-velvet-900/40"
+          class="flex flex-col items-center justify-center py-8 px-4 rounded border border-dashed border-amazon-border bg-amazon-surface/30"
         >
-          <p class="text-velvet-300 text-lg mb-1 font-semibold">
+          <p class="text-amazon-text text-base mb-1 font-semibold">
             {{ 'gallery.empty' | translate }}
           </p>
-          <p class="text-velvet-500 text-xs">{{ 'gallery.emptyHint' | translate }}</p>
+          <p class="text-amazon-textMuted text-xs">{{ 'gallery.emptyHint' | translate }}</p>
         </div>
       </ng-template>
     </div>
@@ -110,10 +107,15 @@ import { Coin } from '../../models/coin.model';
 })
 export class GalleryComponent {
   store = inject(CoinStore);
+  tagService = inject(TagService);
   i18n = inject(I18nService);
 
   editRequested = output<Coin>();
   deleteRequested = output<string>();
+
+  getTagInfo(tagId: string): { category: string; value: string } | null {
+    return this.tagService.getTag(tagId) || null;
+  }
 
   selectCoin(coin: Coin): void {
     // Could display a modal or detailed view
