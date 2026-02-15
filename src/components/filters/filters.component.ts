@@ -273,7 +273,7 @@ export class FiltersComponent {
 
   countCoinsWithTag(category: string, value: string): number {
     const filters = this.store.selectedFilters();
-    
+
     return this.store.coins().filter((coin) => {
       // Check if coin matches current tag filters
       const tagsMatch =
