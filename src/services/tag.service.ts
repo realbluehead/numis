@@ -78,14 +78,12 @@ export class TagService {
         throw new Error('Invalid format');
       }
 
-      // Map to ensure IDs are unique and track old→new ID mapping
+      // Mantenim els IDs originals dels tags (no es generen nous)
       const idMapping = new Map<string, string>();
       const newTags = imported.map((tag) => {
-        const newId = this.generateId();
-        idMapping.set(tag.id, newId);
+        idMapping.set(tag.id, tag.id); // ID mapping 1:1 (mantenir el mateix ID)
         return {
           ...tag,
-          id: newId,
           createdAt: new Date(tag.createdAt || Date.now()),
         };
       });
