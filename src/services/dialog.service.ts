@@ -16,11 +16,17 @@ export class DialogService {
   pendingDialog = signal<ConfirmDialog | null>(null);
   private dialogResolve: ((result: boolean) => void) | null = null;
 
-  confirm(title: string, message: string, confirmText: string = 'Confirmar', cancelText: string = 'Cancelar', isDangerous: boolean = false): Promise<boolean> {
+  confirm(
+    title: string,
+    message: string,
+    confirmText: string = 'Confirmar',
+    cancelText: string = 'Cancelar',
+    isDangerous: boolean = false,
+  ): Promise<boolean> {
     return new Promise((resolve) => {
       this.dialogResolve = resolve;
       const id = `dialog-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+
       this.pendingDialog.set({
         id,
         title,

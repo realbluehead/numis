@@ -462,19 +462,21 @@ export class App {
   }
 
   clearAllData(): void {
-    this.dialogService.confirm(
-      this.i18n.t('message.clearConfirm'),
-      'Esta accción eliminará todas las monedas y etiquetas. No se puede deshacer.',
-      'Eliminar',
-      'Cancelar',
-      true
-    ).then((confirmed) => {
-      if (confirmed) {
-        this.store.clearAll();
-        this.tagService.clearAllTags();
-        this.notificationService.success(this.i18n.t('message.cleared'));
-      }
-    });
+    this.dialogService
+      .confirm(
+        this.i18n.t('message.clearConfirm'),
+        'Esta accción eliminará todas las monedas y etiquetas. No se puede deshacer.',
+        'Eliminar',
+        'Cancelar',
+        true,
+      )
+      .then((confirmed) => {
+        if (confirmed) {
+          this.store.clearAll();
+          this.tagService.clearAllTags();
+          this.notificationService.success(this.i18n.t('message.cleared'));
+        }
+      });
   }
 
   dismissSyncError(): void {

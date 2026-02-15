@@ -20,7 +20,10 @@ import { DialogService } from '../../services/dialog.service';
         >
           <!-- Header -->
           <div
-            [ngClass]="{ 'bg-amazon-danger/10': dialog.isDangerous, 'bg-amazon-card': !dialog.isDangerous }"
+            [ngClass]="{
+              'bg-amazon-danger/10': dialog.isDangerous,
+              'bg-amazon-card': !dialog.isDangerous,
+            }"
             class="px-6 py-4 border-b border-amazon-border"
           >
             <h2 class="text-lg font-semibold text-amazon-textLight">
@@ -37,10 +40,7 @@ import { DialogService } from '../../services/dialog.service';
 
           <!-- Footer -->
           <div class="px-6 py-4 border-t border-amazon-border flex justify-end gap-2">
-            <button
-              (click)="dialogService.cancel()"
-              class="btn-sm btn-secondary"
-            >
+            <button (click)="dialogService.cancel()" class="btn-sm btn-secondary">
               {{ dialog.cancelText }}
             </button>
             <button

@@ -180,16 +180,18 @@ export class GalleryComponent {
 
   deleteCoin(event: Event, coinId: string): void {
     event.stopPropagation();
-    this.dialogService.confirm(
-      this.i18n.t('gallery.deleteConfirm'),
-      '¿Estás seguro de que deseas eliminar esta moneda? No se puede deshacer.',
-      'Eliminar',
-      'Cancelar',
-      true
-    ).then((confirmed) => {
-      if (confirmed) {
-        this.store.deleteCoin(coinId);
-      }
-    });
+    this.dialogService
+      .confirm(
+        this.i18n.t('gallery.deleteConfirm'),
+        '¿Estás seguro de que deseas eliminar esta moneda? No se puede deshacer.',
+        'Eliminar',
+        'Cancelar',
+        true,
+      )
+      .then((confirmed) => {
+        if (confirmed) {
+          this.store.deleteCoin(coinId);
+        }
+      });
   }
 }
