@@ -45,6 +45,46 @@ export class CoinStore {
     return result.sort((a, b) => a.category.localeCompare(b.category));
   });
 
+  // Available tags based on current tag filters (for cascading/dependent filters)
+  availableTags = computed(() => {
+    const filters = this.selectedFiltersSignal();
+    const tags = new Map<string, Set<string>>();
+
+    // Get coins that match the current tag filters
+    const coinsMatchingFilters = this.coinsSignal().filter((coin) => {
+      if (filters.length === 0) return true;
+
+      return filters.every((filter) => {
+        return filter.values.some((value) => {
+          return coin.tags.some((tagId) => {
+            const tag = this.tagService.getTag(tagId);
+            return tag && tag.category === filter.category && tag.value === value;
+          });
+        });
+      });
+    });
+
+    // Extract tags from filtered coins
+    coinsMatchingFilters.forEach((coin) => {
+      coin.tags.forEach((tagId) => {
+        const tag = this.tagService.getTag(tagId);
+        if (tag) {
+          if (!tags.has(tag.category)) {
+            tags.set(tag.category, new Set());
+          }
+          tags.get(tag.category)!.add(tag.value);
+        }
+      });
+    });
+
+    const result: { category: string; values: string[] }[] = [];
+    tags.forEach((values, category) => {
+      result.push({ category, values: Array.from(values).sort() });
+    });
+
+    return result.sort((a, b) => a.category.localeCompare(b.category));
+  });
+
   filteredCoins = computed(() => {
     const filters = this.selectedFiltersSignal();
     const weightRange = this.weightRangeSignal();

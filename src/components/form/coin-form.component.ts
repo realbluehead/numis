@@ -653,7 +653,10 @@ export class CoinFormComponent {
       this.resetForm();
     } catch (error) {
       console.error('Error saving coin:', error);
-      alert('Error al guardar la moneda: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      alert(
+        'Error al guardar la moneda: ' +
+          (error instanceof Error ? error.message : 'Error desconocido'),
+      );
     }
   }
 

@@ -198,13 +198,13 @@ export class FiltersComponent {
 
   filteredTagGroups = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    const allTags = this.store.allTags();
+    const availableTags = this.store.availableTags();
 
     if (!query) {
-      return allTags;
+      return availableTags;
     }
 
-    return allTags
+    return availableTags
       .map((tagGroup) => {
         const categoryMatch = tagGroup.category.toLowerCase().includes(query);
         const filteredValues = tagGroup.values.filter((value) =>
@@ -224,7 +224,7 @@ export class FiltersComponent {
         // If neither category nor values match, filter out this group
         return null;
       })
-      .filter((tagGroup): tagGroup is (typeof allTags)[number] => tagGroup !== null);
+      .filter((tagGroup): tagGroup is (typeof availableTags)[number] => tagGroup !== null);
   });
 
   toggleFilter(category: string, value: string): void {
@@ -272,11 +272,28 @@ export class FiltersComponent {
   }
 
   countCoinsWithTag(category: string, value: string): number {
-    return this.store.coins().filter((coin) =>
-      coin.tags.some((tagId) => {
+    const filters = this.store.selectedFilters();
+    
+    return this.store.coins().filter((coin) => {
+      // Check if coin matches current tag filters
+      const tagsMatch =
+        filters.length === 0 ||
+        filters.every((filter) => {
+          return filter.values.some((filterValue) => {
+            return coin.tags.some((tagId) => {
+              const tag = this.tagService.getTag(tagId);
+              return tag && tag.category === filter.category && tag.value === filterValue;
+            });
+          });
+        });
+
+      // Check if coin has the specific tag we're counting
+      const hasTag = coin.tags.some((tagId) => {
         const tag = this.tagService.getTag(tagId);
         return tag && tag.category === category && tag.value === value;
-      }),
-    ).length;
+      });
+
+      return tagsMatch && hasTag;
+    }).length;
   }
 }
