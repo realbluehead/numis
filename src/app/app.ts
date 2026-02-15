@@ -7,6 +7,7 @@ import { SyncService } from '../services/sync.service';
 import { I18nService } from '../services/i18n.service';
 import { NotificationService } from '../services/notification.service';
 import { DialogService } from '../services/dialog.service';
+import { VersionService } from '../services/version.service';
 import { TranslatePipe } from '../pipes/translate.pipe';
 import { GalleryComponent } from '../components/gallery/gallery.component';
 import { FiltersComponent } from '../components/filters/filters.component';
@@ -46,6 +47,7 @@ import { Coin } from '../models/coin.model';
               <h1 class="text-2xl font-display text-amazon-textLight mb-0">
                 {{ 'header.title' | translate }}
               </h1>
+              <p class="text-xs text-amazon-textMuted">{{ versionService.buildDate() }}</p>
             </div>
 
             <!-- Right Controls: Export/Import + Sync + Language Selector -->
@@ -321,6 +323,7 @@ export class App {
   syncService = inject(SyncService);
   notificationService = inject(NotificationService);
   dialogService = inject(DialogService);
+  versionService = inject(VersionService);
   cdr = inject(ChangeDetectorRef);
 
   activeTab = signal<'gallery' | 'tags'>('gallery');

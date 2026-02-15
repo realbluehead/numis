@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "bash generate-version.sh && ng serve",
+    "build": "bash generate-version.sh && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
