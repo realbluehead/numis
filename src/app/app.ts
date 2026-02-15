@@ -465,9 +465,9 @@ export class App {
     this.dialogService
       .confirm(
         this.i18n.t('message.clearConfirm'),
-        'Esta accción eliminará todas las monedas y etiquetas. No se puede deshacer.',
-        'Eliminar',
-        'Cancelar',
+        this.i18n.t('message.clearConfirmMessage'),
+        this.i18n.t('dialog.delete'),
+        this.i18n.t('dialog.cancel'),
         true,
       )
       .then((confirmed) => {

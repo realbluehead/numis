@@ -366,6 +366,26 @@ export class I18nService {
       es: 'Todos los datos han sido eliminados',
       en: 'All data has been cleared',
     },
+    'message.clearConfirmMessage': {
+      ca: 'Aquesta acció eliminarà totes les monedes i etiquetes. No es pot desfer.',
+      es: 'Esta acción eliminará todas las monedas y etiquetas. No se puede deshacer.',
+      en: 'This action will delete all coins and tags. This cannot be undone.',
+    },
+    'gallery.deleteConfirmMessage': {
+      ca: '¿Estàs segur que vols eliminar aquesta moneda? No es pot desfer.',
+      es: '¿Estás seguro de que deseas eliminar esta moneda? No se puede deshacer.',
+      en: 'Are you sure you want to delete this coin? This cannot be undone.',
+    },
+    'dialog.delete': {
+      ca: 'Eliminar',
+      es: 'Eliminar',
+      en: 'Delete',
+    },
+    'dialog.cancel': {
+      ca: 'Cancelar',
+      es: 'Cancelar',
+      en: 'Cancel',
+    },
     'message.syncLocalSuccess': {
       ca: 'Saved to local PouchDB successfully',
       es: 'Guardado en PouchDB local con éxito',

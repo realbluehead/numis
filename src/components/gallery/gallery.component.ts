@@ -183,9 +183,9 @@ export class GalleryComponent {
     this.dialogService
       .confirm(
         this.i18n.t('gallery.deleteConfirm'),
-        '¿Estás seguro de que deseas eliminar esta moneda? No se puede deshacer.',
-        'Eliminar',
-        'Cancelar',
+        this.i18n.t('gallery.deleteConfirmMessage'),
+        this.i18n.t('dialog.delete'),
+        this.i18n.t('dialog.cancel'),
         true,
       )
       .then((confirmed) => {
