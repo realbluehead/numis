@@ -294,6 +294,26 @@ export class I18nService {
       es: 'Ej: 25.5',
       en: 'E.g: 25.5',
     },
+    'form.acquisitionTitle': {
+      ca: 'Adquisició',
+      es: 'Adquisición',
+      en: 'Acquisition',
+    },
+    'form.addedToCollectionAt': {
+      ca: 'Data d\'adquisició',
+      es: 'Fecha de adquisición',
+      en: 'Acquisition date',
+    },
+    'form.pricePaid': {
+      ca: 'Preu pagat (€)',
+      es: 'Precio pagado (€)',
+      en: 'Price paid (€)',
+    },
+    'form.pricePaidPlaceholder': {
+      ca: 'Ex: 25.50',
+      es: 'Ej: 25.50',
+      en: 'E.g: 25.50',
+    },
     'form.submitCreate': {
       ca: 'Afegir Moneda',
       es: 'Añadir Moneda',
@@ -313,6 +333,16 @@ export class I18nService {
       ca: 'Si us plau, afegeix almenys una imatge',
       es: 'Por favor, añade al menos una imagen',
       en: 'Please add at least one image',
+    },
+    'form.import': {
+      ca: 'Importar dades',
+      es: 'Importar datos',
+      en: 'Import data',
+    },
+    'form.importPlaceholder': {
+      ca: 'Enganxa dades (tab-separated)',
+      es: 'Pega datos (tab-separados)',
+      en: 'Paste data (tab-separated)',
     },
 
     // Messages

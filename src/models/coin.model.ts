@@ -13,6 +13,9 @@ export interface Coin {
   general?: string;
   weight?: number;
   diameter?: number;
+  seller?: string;
+  addedToCollectionAt?: Date;
+  pricePaid?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

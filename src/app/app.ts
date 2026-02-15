@@ -213,7 +213,7 @@ import { Coin } from '../models/coin.model';
           [style.backgroundColor]="'#0f1419'"
           [style.borderRadius]="'0.5rem'"
           [style.boxShadow]="'0 20px 25px -5px rgba(0, 0, 0, 0.1)'"
-          [style.maxWidth]="'42rem'"
+          [style.maxWidth]="'75rem'"
           [style.width]="'100%'"
           [style.margin]="'0 1rem'"
           [style.maxHeight]="'90vh'"

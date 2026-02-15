@@ -1,4 +1,4 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, output, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CoinStore } from '../../services/coin.store';
 import { TagService } from '../../services/tag.service';
@@ -23,10 +23,25 @@ import { Coin } from '../../models/coin.model';
         </p>
       </div>
 
+      <!-- Columns Slider -->
+      <div class="flex items-center gap-2 py-1.5">
+        <label class="text-xs text-amazon-textMuted font-medium">Columnas:</label>
+        <input
+          type="range"
+          min="1"
+          max="16"
+          [value]="columnsCount()"
+          (input)="columnsCount.set(+$event.target.value)"
+          class="flex-1"
+        />
+        <span class="text-xs text-amazon-text font-semibold w-6 text-center">{{ columnsCount() }}</span>
+      </div>
+
       <!-- Gallery Grid -->
       <div
         *ngIf="store.filteredCoins().length > 0; else emptyState"
-        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-1.5"
+        class="gap-1.5"
+        [ngStyle]="{ display: 'grid', gridTemplateColumns: 'repeat(' + columnsCount() + ', 1fr)' }"
       >
         <div
           *ngFor="let coin of store.filteredCoins()"
@@ -53,6 +68,16 @@ import { Coin } from '../../models/coin.model';
 
           <!-- Info Overlay -->
           <div class="p-1.5 space-y-1 bg-amazon-card">
+            <!-- Reference -->
+            <div class="flex flex-wrap gap-1">
+              <span
+                *ngIf="coin.reference"
+                class="inline-block text-xs px-2 py-0.5 bg-gray-700 text-gray-100 rounded-full font-medium"
+              >
+                {{ coin.reference }}
+              </span>
+            </div>
+
             <!-- Tags -->
             <div class="flex flex-wrap gap-1">
               <span
@@ -106,12 +131,35 @@ import { Coin } from '../../models/coin.model';
   `,
 })
 export class GalleryComponent {
+  private readonly COLUMNS_STORAGE_KEY = 'numis-gallery-columns';
+
   store = inject(CoinStore);
   tagService = inject(TagService);
   i18n = inject(I18nService);
 
+  columnsCount = signal(this.loadColumnsFromStorage());
+
   editRequested = output<Coin>();
   deleteRequested = output<string>();
+
+  constructor() {
+    // Save to localStorage when columnsCount changes
+    effect(() => {
+      const columns = this.columnsCount();
+      localStorage.setItem(this.COLUMNS_STORAGE_KEY, String(columns));
+    });
+  }
+
+  private loadColumnsFromStorage(): number {
+    const stored = localStorage.getItem(this.COLUMNS_STORAGE_KEY);
+    if (stored) {
+      const value = parseInt(stored, 10);
+      if (value >= 1 && value <= 16) {
+        return value;
+      }
+    }
+    return 8; // Default to 8 columns
+  }
 
   getTagInfo(tagId: string): { category: string; value: string } | null {
     return this.tagService.getTag(tagId) || null;

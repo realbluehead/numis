@@ -19,6 +19,21 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
         {{ editingCoin() ? ('form.editCoin' | translate) : ('form.newCoin' | translate) }}
       </h3>
 
+      <!-- Import Field -->
+      <div class="space-y-0.5 mb-2">
+        <label class="text-xs font-semibold text-amazon-text">
+          {{ 'form.import' | translate }}
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="importData"
+          (ngModelChange)="onImportDataChange($event)"
+          name="import"
+          class="w-full"
+          [placeholder]="'form.importPlaceholder' | translate"
+        />
+      </div>
+
       <form (ngSubmit)="submitForm()" class="space-y-1.5">
         <!-- Reference Field -->
         <div class="space-y-0.5">
@@ -191,30 +206,32 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
             {{ 'form.descriptionsTitle' | translate }}
           </legend>
 
-          <!-- Anvers -->
-          <div class="space-y-0.5">
-            <label class="block text-xs text-amazon-textMuted">
-              {{ 'form.anvers' | translate }}
-            </label>
-            <textarea
-              [ngModel]="anvers()"
-              (ngModelChange)="anvers.set($event)"
-              name="anvers"
-              class="w-full min-h-[60px] resize-none"
-            ></textarea>
-          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <!-- Anvers -->
+            <div class="space-y-0.5">
+              <label class="block text-xs text-amazon-textMuted">
+                {{ 'form.anvers' | translate }}
+              </label>
+              <textarea
+                [ngModel]="anvers()"
+                (ngModelChange)="anvers.set($event)"
+                name="anvers"
+                class="w-full min-h-[60px] resize-none"
+              ></textarea>
+            </div>
 
-          <!-- Revers -->
-          <div class="space-y-0.5">
-            <label class="block text-xs text-amazon-textMuted">
-              {{ 'form.revers' | translate }}
-            </label>
-            <textarea
-              [ngModel]="revers()"
-              (ngModelChange)="revers.set($event)"
-              name="revers"
-              class="w-full min-h-[60px] resize-none"
-            ></textarea>
+            <!-- Revers -->
+            <div class="space-y-0.5">
+              <label class="block text-xs text-amazon-textMuted">
+                {{ 'form.revers' | translate }}
+              </label>
+              <textarea
+                [ngModel]="revers()"
+                (ngModelChange)="revers.set($event)"
+                name="revers"
+                class="w-full min-h-[60px] resize-none"
+              ></textarea>
+            </div>
           </div>
 
           <!-- General -->
@@ -230,11 +247,9 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
             ></textarea>
           </div>
         </fieldset>
-        <fieldset class="border border-amazon-border p-1.5 rounded bg-amazon-surface space-y-1">
-          <legend class="text-xs font-semibold text-amazon-text px-1">
-            {{ 'form.physicalTitle' | translate }}
-          </legend>
 
+        <!-- Physical & Acquisition Fields (4 columns) -->
+        <div class="grid grid-cols-4 gap-2">
           <!-- Weight -->
           <div class="space-y-0.5">
             <label class="block text-xs text-amazon-textMuted">
@@ -266,7 +281,50 @@ import { Coin, CoinInput, Tag } from '../../models/coin.model';
               [placeholder]="'form.diameterPlaceholder' | translate"
             />
           </div>
-        </fieldset>
+
+          <!-- Seller -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">Seller</label>
+            <input
+              type="text"
+              [ngModel]="seller()"
+              (ngModelChange)="seller.set($event)"
+              name="seller"
+              class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+            />
+          </div>
+
+          <!-- Added to Collection Date -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.addedToCollectionAt' | translate }}
+            </label>
+            <input
+              type="date"
+              [ngModel]="addedToCollectionAt()"
+              (ngModelChange)="addedToCollectionAt.set($event)"
+              name="addedToCollectionAt"
+              class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+            />
+          </div>
+
+          <!-- Price Paid -->
+          <div class="space-y-0.5">
+            <label class="block text-xs text-amazon-textMuted">
+              {{ 'form.pricePaid' | translate }}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              [ngModel]="pricePaid()"
+              (ngModelChange)="pricePaid.set($event)"
+              name="pricePaid"
+              class="w-full px-2 py-1 text-sm border border-amazon-border rounded bg-amazon-bg text-amazon-text"
+              [placeholder]="'form.pricePaidPlaceholder' | translate"
+            />
+          </div>
+        </div>
+
         <div class="flex gap-1 pt-1 justify-end">
           <button type="button" (click)="resetForm()" class="btn-sm btn-secondary">
             {{ 'form.cancel' | translate }}
@@ -304,6 +362,10 @@ export class CoinFormComponent {
   general = signal('');
   weight = signal('');
   diameter = signal('');
+  seller = signal('');
+  addedToCollectionAt = signal('');
+  pricePaid = signal('');
+  importData = signal('');
   editingCoin = signal<Coin | null>(null);
 
   // Computed indices for images
@@ -373,6 +435,9 @@ export class CoinFormComponent {
         this.general.set(coin.general || '');
         this.weight.set(coin.weight ? String(coin.weight) : '');
         this.diameter.set(coin.diameter ? String(coin.diameter) : '');
+        this.seller.set(coin.seller || '');
+        this.addedToCollectionAt.set(coin.addedToCollectionAt ? this.formatDateForInput(coin.addedToCollectionAt) : '');
+        this.pricePaid.set(coin.pricePaid ? String(coin.pricePaid) : '');
       } else {
         this.resetForm();
       }
@@ -385,6 +450,104 @@ export class CoinFormComponent {
 
   onValueChange(value: string): void {
     this.newTag.update((tag) => ({ ...tag, value }));
+  }
+
+  onImportDataChange(value: string): void {
+    this.importData.set(value);
+    if (value.trim()) {
+      const parsed = this.parseCSV(value);
+      console.log('Parsed CSV fields:', parsed);
+      if (parsed.length > 0) {
+        // Clear existing tags before importing
+        this.tags.set([]);
+
+        if (parsed[0].length > 1) {
+          this.reference.set(parsed[0][1]);
+        }
+        if (parsed[0].length > 2) {
+          const dateValue = parsed[0][2].trim();
+          if (dateValue) {
+            this.addedToCollectionAt.set(this.formatDateForInput(dateValue));
+          }
+        }
+        if (parsed[0].length > 3) {
+          this.seller.set(parsed[0][3]);
+        }
+        if (parsed[0].length > 4) {
+          const facturaValue = parsed[0][4].trim().toLowerCase();
+          if (facturaValue) {
+            const matchingTag = this.tagService
+              .tags()
+              .find((t) => t.category === 'FACTURA' && t.value.toLowerCase() === facturaValue);
+            if (matchingTag) {
+              this.tags.update((t) => [...t, matchingTag.id]);
+            }
+          }
+        }
+        if (parsed[0].length > 8) {
+          const areaValue = parsed[0][8].trim().toLowerCase();
+          if (areaValue) {
+            const matchingTag = this.tagService
+              .tags()
+              .find((t) => t.category === 'AREA' && t.value.toLowerCase() === areaValue);
+            if (matchingTag) {
+              this.tags.update((t) => [...t, matchingTag.id]);
+            }
+          }
+        }
+        if (parsed[0].length > 9) {
+          const cecaValue = parsed[0][9].trim().toLowerCase();
+          if (cecaValue) {
+            const matchingTag = this.tagService
+              .tags()
+              .find((t) => t.category === 'CECA' && t.value.toLowerCase() === cecaValue);
+            if (matchingTag) {
+              this.tags.update((t) => [...t, matchingTag.id]);
+            }
+          }
+        }
+        if (parsed[0].length > 10) {
+          const denominacioValue = parsed[0][10].trim().toLowerCase();
+          if (denominacioValue) {
+            const matchingTag = this.tagService
+              .tags()
+              .find((t) => t.category === 'DENOMINACIÓ' && t.value.toLowerCase() === denominacioValue);
+            if (matchingTag) {
+              this.tags.update((t) => [...t, matchingTag.id]);
+            }
+          }
+        }
+        if (parsed[0].length > 11) {
+          this.general.set(parsed[0][11]);
+        }
+        if (parsed[0].length > 12) {
+          this.weight.set(parsed[0][12].replace(',', '.'));
+        }
+        if (parsed[0].length > 13) {
+          this.diameter.set(parsed[0][13].replace(',', '.'));
+        }
+        if (parsed[0].length > 14) {
+          this.pricePaid.set(parsed[0][14].replace(',', '.'));
+        }
+        if (parsed[0].length > 15) {
+          this.anvers.set(parsed[0][15]);
+        }
+        if (parsed[0].length > 16) {
+          this.revers.set(parsed[0][16]);
+        }
+      }
+      // Clear the import field after processing with a small delay
+      setTimeout(() => {
+        this.importData.set('');
+      }, 0);
+    }
+  }
+
+  parseCSV(csvString: string): string[][] {
+    const lines = csvString.split('\n').filter((line) => line.trim());
+    return lines.map((line) =>
+      line.split('\t').map((field) => field.trim())
+    );
   }
 
   onCategoryBlur(): void {
@@ -451,6 +614,7 @@ export class CoinFormComponent {
     const imageUrls = this.images().filter((img) => img.trim());
     const weightValue = String(this.weight()).trim();
     const diameterValue = String(this.diameter()).trim();
+    const pricePaidValue = String(this.pricePaid()).trim();
 
     const coinInput: CoinInput = {
       reference: this.reference().trim() || undefined,
@@ -461,6 +625,9 @@ export class CoinFormComponent {
       general: this.general().trim() || undefined,
       weight: weightValue ? parseFloat(weightValue) : undefined,
       diameter: diameterValue ? parseFloat(diameterValue) : undefined,
+      seller: this.seller().trim() || undefined,
+      addedToCollectionAt: this.addedToCollectionAt() ? new Date(this.addedToCollectionAt()) : undefined,
+      pricePaid: pricePaidValue ? parseFloat(pricePaidValue) : undefined,
     };
 
     if (this.editingCoin()) {
@@ -483,10 +650,37 @@ export class CoinFormComponent {
     this.general.set('');
     this.weight.set('');
     this.diameter.set('');
+    this.seller.set('');
+    this.addedToCollectionAt.set('');
+    this.pricePaid.set('');
+    this.importData.set('');
     this.formReset.emit();
   }
 
   trackByImage(index: number): number {
     return index;
+  }
+
+  private formatDateForInput(date: Date | string): string {
+    if (!date) return '';
+    let d: Date;
+
+    if (typeof date === 'string') {
+      // Check if it's in dd/mm/yyyy format
+      const ddmmyyyyMatch = date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const [, day, month, year] = ddmmyyyyMatch;
+        d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        d = new Date(date);
+      }
+    } else {
+      d = date;
+    }
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

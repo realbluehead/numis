@@ -50,30 +50,36 @@ export class CoinStore {
     const weightRange = this.weightRangeSignal();
     const diameterRange = this.diameterRangeSignal();
 
-    return this.coinsSignal().filter((coin) => {
-      // Check tag filters
-      const tagsMatch =
-        filters.length === 0 ||
-        filters.every((filter) => {
-          return filter.values.some((value) => {
-            return coin.tags.some((tagId) => {
-              const tag = this.tagService.getTag(tagId);
-              return tag && tag.category === filter.category && tag.value === value;
+    return this.coinsSignal()
+      .filter((coin) => {
+        // Check tag filters
+        const tagsMatch =
+          filters.length === 0 ||
+          filters.every((filter) => {
+            return filter.values.some((value) => {
+              return coin.tags.some((tagId) => {
+                const tag = this.tagService.getTag(tagId);
+                return tag && tag.category === filter.category && tag.value === value;
+              });
             });
           });
-        });
 
-      // Check weight range
-      const weightMatches =
-        !coin.weight || (coin.weight >= weightRange.min && coin.weight <= weightRange.max);
+        // Check weight range
+        const weightMatches =
+          !coin.weight || (coin.weight >= weightRange.min && coin.weight <= weightRange.max);
 
-      // Check diameter range
-      const diameterMatches =
-        !coin.diameter ||
-        (coin.diameter >= diameterRange.min && coin.diameter <= diameterRange.max);
+        // Check diameter range
+        const diameterMatches =
+          !coin.diameter ||
+          (coin.diameter >= diameterRange.min && coin.diameter <= diameterRange.max);
 
-      return tagsMatch && weightMatches && diameterMatches;
-    });
+        return tagsMatch && weightMatches && diameterMatches;
+      })
+      .sort((a, b) => {
+        const refA = a.reference || '';
+        const refB = b.reference || '';
+        return refB.localeCompare(refA);
+      });
   });
 
   constructor() {
