@@ -614,6 +614,13 @@ export class CoinFormComponent {
 
   submitForm(): void {
     const imageUrls = this.images().filter((img) => img.trim());
+
+    // Validation: at least one image required
+    if (imageUrls.length === 0) {
+      alert(this.i18n.t('form.errorImage'));
+      return;
+    }
+
     const weightValue = String(this.weight()).trim();
     const diameterValue = String(this.diameter()).trim();
     const pricePaidValue = String(this.pricePaid()).trim();
@@ -634,13 +641,20 @@ export class CoinFormComponent {
       pricePaid: pricePaidValue ? parseFloat(pricePaidValue) : undefined,
     };
 
-    if (this.editingCoin()) {
-      this.store.updateCoin(this.editingCoin()!.id, coinInput);
-    } else {
-      this.store.addCoin(coinInput);
-    }
+    try {
+      if (this.editingCoin()) {
+        this.store.updateCoin(this.editingCoin()!.id, coinInput);
+        console.log('Coin updated successfully');
+      } else {
+        this.store.addCoin(coinInput);
+        console.log('Coin added successfully');
+      }
 
-    this.resetForm();
+      this.resetForm();
+    } catch (error) {
+      console.error('Error saving coin:', error);
+      alert('Error al guardar la moneda: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+    }
   }
 
   resetForm(): void {
