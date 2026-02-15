@@ -69,7 +69,7 @@ export class TagService {
     return JSON.stringify(this.tagsSignal(), null, 2);
   }
 
-  importTags(jsonData: string): void {
+  importTags(jsonData: string): Map<string, string> {
     try {
       const imported = JSON.parse(jsonData) as TagTemplate[];
 
@@ -78,14 +78,20 @@ export class TagService {
         throw new Error('Invalid format');
       }
 
-      // Map to ensure IDs are unique
-      const newTags = imported.map((tag) => ({
-        ...tag,
-        id: this.generateId(),
-        createdAt: new Date(tag.createdAt || Date.now()),
-      }));
+      // Map to ensure IDs are unique and track old→new ID mapping
+      const idMapping = new Map<string, string>();
+      const newTags = imported.map((tag) => {
+        const newId = this.generateId();
+        idMapping.set(tag.id, newId);
+        return {
+          ...tag,
+          id: newId,
+          createdAt: new Date(tag.createdAt || Date.now()),
+        };
+      });
 
       this.tagsSignal.set([...this.tagsSignal(), ...newTags]);
+      return idMapping;
     } catch (error) {
       throw new Error('Error importing tags: ' + (error as Error).message);
     }

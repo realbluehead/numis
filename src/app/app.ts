@@ -421,12 +421,21 @@ export class App {
           }
         } else if (data.coins && data.tags) {
           // New format - coins and tags
-          const coinsOk = this.store.importFromJSON(JSON.stringify(data.coins));
+          // Import tags first to get the ID mapping (old → new)
+          let idMapping: Map<string, string> = new Map();
           try {
-            this.tagService.importTags(JSON.stringify(data.tags));
+            idMapping = this.tagService.importTags(JSON.stringify(data.tags));
           } catch (tagError) {
             console.error('Error importing tags:', tagError);
           }
+
+          // Remap the tag IDs in coins before importing
+          const remappedCoins = data.coins.map((coin: any) => ({
+            ...coin,
+            tags: coin.tags.map((oldTagId: string) => idMapping.get(oldTagId) || oldTagId),
+          }));
+
+          const coinsOk = this.store.importFromJSON(JSON.stringify(remappedCoins));
           if (coinsOk) {
             alert(this.i18n.t('message.importSuccess'));
           } else {
