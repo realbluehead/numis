@@ -5,11 +5,15 @@ import { CoinStore } from '../services/coin.store';
 import { TagService } from '../services/tag.service';
 import { SyncService } from '../services/sync.service';
 import { I18nService } from '../services/i18n.service';
+import { NotificationService } from '../services/notification.service';
+import { DialogService } from '../services/dialog.service';
 import { TranslatePipe } from '../pipes/translate.pipe';
 import { GalleryComponent } from '../components/gallery/gallery.component';
 import { FiltersComponent } from '../components/filters/filters.component';
 import { CoinFormComponent } from '../components/form/coin-form.component';
 import { TagManagerComponent } from '../components/tag-manager/tag-manager.component';
+import { NotificationComponent } from '../components/notification/notification.component';
+import { ConfirmDialogComponent } from '../components/confirm-dialog/confirm-dialog.component';
 import { Coin } from '../models/coin.model';
 
 @Component({
@@ -23,8 +27,12 @@ import { Coin } from '../models/coin.model';
     FiltersComponent,
     CoinFormComponent,
     TagManagerComponent,
+    NotificationComponent,
+    ConfirmDialogComponent,
   ],
   template: `
+    <app-notification></app-notification>
+    <app-confirm-dialog></app-confirm-dialog>
     <div class="min-h-screen bg-amazon-bg">
       <!-- Header -->
       <header
@@ -311,6 +319,8 @@ export class App {
   tagService = inject(TagService);
   i18n = inject(I18nService);
   syncService = inject(SyncService);
+  notificationService = inject(NotificationService);
+  dialogService = inject(DialogService);
   cdr = inject(ChangeDetectorRef);
 
   activeTab = signal<'gallery' | 'tags'>('gallery');
@@ -371,9 +381,9 @@ export class App {
     if (username && password) {
       this.syncService.setCredentials(username, password);
       this.closeCredentialsModal();
-      alert('CouchDB credentials saved successfully');
+      this.notificationService.success('CouchDB credentials saved successfully');
     } else {
-      alert('Please enter both username and password');
+      this.notificationService.warning('Please enter both username and password');
     }
   }
 
@@ -415,9 +425,9 @@ export class App {
         if (Array.isArray(data)) {
           // Old format - just coins
           if (this.store.importFromJSON(JSON.stringify(data))) {
-            alert(this.i18n.t('message.importSuccess'));
+            this.notificationService.success(this.i18n.t('message.importSuccess'));
           } else {
-            alert(this.i18n.t('message.importError'));
+            this.notificationService.error(this.i18n.t('message.importError'));
           }
         } else if (data.coins && data.tags) {
           // New format - coins and tags
@@ -437,25 +447,34 @@ export class App {
 
           const coinsOk = this.store.importFromJSON(JSON.stringify(remappedCoins));
           if (coinsOk) {
-            alert(this.i18n.t('message.importSuccess'));
+            this.notificationService.success(this.i18n.t('message.importSuccess'));
           } else {
-            alert(this.i18n.t('message.importError'));
+            this.notificationService.error(this.i18n.t('message.importError'));
           }
         } else {
-          alert(this.i18n.t('message.importError'));
+          this.notificationService.error(this.i18n.t('message.importError'));
         }
       } catch (error) {
-        alert(this.i18n.t('message.importError'));
+        this.notificationService.error(this.i18n.t('message.importError'));
       }
     };
     reader.readAsText(file);
   }
 
   clearAllData(): void {
-    if (confirm(this.i18n.t('message.clearConfirm'))) {
-      this.store.clearAll();
-      this.tagService.clearAllTags();
-    }
+    this.dialogService.confirm(
+      this.i18n.t('message.clearConfirm'),
+      'Esta accción eliminará todas las monedas y etiquetas. No se puede deshacer.',
+      'Eliminar',
+      'Cancelar',
+      true
+    ).then((confirmed) => {
+      if (confirmed) {
+        this.store.clearAll();
+        this.tagService.clearAllTags();
+        this.notificationService.success(this.i18n.t('message.cleared'));
+      }
+    });
   }
 
   dismissSyncError(): void {

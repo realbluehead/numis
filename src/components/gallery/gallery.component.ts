@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CoinStore } from '../../services/coin.store';
 import { TagService } from '../../services/tag.service';
 import { I18nService } from '../../services/i18n.service';
+import { DialogService } from '../../services/dialog.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TagCategoryPipe, TagValuePipe } from '../../pipes/tag-format.pipe';
 import { Coin } from '../../models/coin.model';
@@ -138,6 +139,7 @@ export class GalleryComponent {
   store = inject(CoinStore);
   tagService = inject(TagService);
   i18n = inject(I18nService);
+  dialogService = inject(DialogService);
 
   columnsCount = signal(this.loadColumnsFromStorage());
 
@@ -178,8 +180,16 @@ export class GalleryComponent {
 
   deleteCoin(event: Event, coinId: string): void {
     event.stopPropagation();
-    if (confirm(this.i18n.t('gallery.deleteConfirm'))) {
-      this.store.deleteCoin(coinId);
-    }
+    this.dialogService.confirm(
+      this.i18n.t('gallery.deleteConfirm'),
+      '¿Estás seguro de que deseas eliminar esta moneda? No se puede deshacer.',
+      'Eliminar',
+      'Cancelar',
+      true
+    ).then((confirmed) => {
+      if (confirmed) {
+        this.store.deleteCoin(coinId);
+      }
+    });
   }
 }

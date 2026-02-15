@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CoinStore } from '../../services/coin.store';
 import { TagService } from '../../services/tag.service';
 import { I18nService } from '../../services/i18n.service';
+import { NotificationService } from '../../services/notification.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TagCategoryPipe, TagValuePipe } from '../../pipes/tag-format.pipe';
 import { Coin, CoinInput, Tag } from '../../models/coin.model';
@@ -348,6 +349,7 @@ export class CoinFormComponent {
   store = inject(CoinStore);
   i18n = inject(I18nService);
   tagService = inject(TagService);
+  notificationService = inject(NotificationService);
 
   coinToEdit = input<Coin | null>(null);
   formReset = output<void>();
@@ -617,7 +619,7 @@ export class CoinFormComponent {
 
     // Validation: at least one image required
     if (imageUrls.length === 0) {
-      alert(this.i18n.t('form.errorImage'));
+      this.notificationService.error(this.i18n.t('form.errorImage'));
       return;
     }
 
@@ -653,7 +655,7 @@ export class CoinFormComponent {
       this.resetForm();
     } catch (error) {
       console.error('Error saving coin:', error);
-      alert(
+      this.notificationService.error(
         'Error al guardar la moneda: ' +
           (error instanceof Error ? error.message : 'Error desconocido'),
       );

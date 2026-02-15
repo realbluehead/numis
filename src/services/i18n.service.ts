@@ -361,6 +361,11 @@ export class I18nService {
       es: '¿Estás seguro? Esto eliminará TODAS las monedas de forma permanente.',
       en: 'Are you sure? This will permanently delete ALL coins.',
     },
+    'message.cleared': {
+      ca: 'Totes les dades han estat eliminades',
+      es: 'Todos los datos han sido eliminados',
+      en: 'All data has been cleared',
+    },
     'message.syncLocalSuccess': {
       ca: 'Saved to local PouchDB successfully',
       es: 'Guardado en PouchDB local con éxito',
