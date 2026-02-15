@@ -300,7 +300,7 @@ export class I18nService {
       en: 'Acquisition',
     },
     'form.addedToCollectionAt': {
-      ca: 'Data d\'adquisició',
+      ca: "Data d'adquisició",
       es: 'Fecha de adquisición',
       en: 'Acquisition date',
     },

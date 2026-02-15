@@ -436,7 +436,9 @@ export class CoinFormComponent {
         this.weight.set(coin.weight ? String(coin.weight) : '');
         this.diameter.set(coin.diameter ? String(coin.diameter) : '');
         this.seller.set(coin.seller || '');
-        this.addedToCollectionAt.set(coin.addedToCollectionAt ? this.formatDateForInput(coin.addedToCollectionAt) : '');
+        this.addedToCollectionAt.set(
+          coin.addedToCollectionAt ? this.formatDateForInput(coin.addedToCollectionAt) : '',
+        );
         this.pricePaid.set(coin.pricePaid ? String(coin.pricePaid) : '');
       } else {
         this.resetForm();
@@ -511,7 +513,9 @@ export class CoinFormComponent {
           if (denominacioValue) {
             const matchingTag = this.tagService
               .tags()
-              .find((t) => t.category === 'DENOMINACIÓ' && t.value.toLowerCase() === denominacioValue);
+              .find(
+                (t) => t.category === 'DENOMINACIÓ' && t.value.toLowerCase() === denominacioValue,
+              );
             if (matchingTag) {
               this.tags.update((t) => [...t, matchingTag.id]);
             }
@@ -545,9 +549,7 @@ export class CoinFormComponent {
 
   parseCSV(csvString: string): string[][] {
     const lines = csvString.split('\n').filter((line) => line.trim());
-    return lines.map((line) =>
-      line.split('\t').map((field) => field.trim())
-    );
+    return lines.map((line) => line.split('\t').map((field) => field.trim()));
   }
 
   onCategoryBlur(): void {
@@ -626,7 +628,9 @@ export class CoinFormComponent {
       weight: weightValue ? parseFloat(weightValue) : undefined,
       diameter: diameterValue ? parseFloat(diameterValue) : undefined,
       seller: this.seller().trim() || undefined,
-      addedToCollectionAt: this.addedToCollectionAt() ? new Date(this.addedToCollectionAt()) : undefined,
+      addedToCollectionAt: this.addedToCollectionAt()
+        ? new Date(this.addedToCollectionAt())
+        : undefined,
       pricePaid: pricePaidValue ? parseFloat(pricePaidValue) : undefined,
     };
 

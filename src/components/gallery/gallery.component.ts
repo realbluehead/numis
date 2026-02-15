@@ -34,7 +34,9 @@ import { Coin } from '../../models/coin.model';
           (input)="columnsCount.set(+$event.target.value)"
           class="flex-1"
         />
-        <span class="text-xs text-amazon-text font-semibold w-6 text-center">{{ columnsCount() }}</span>
+        <span class="text-xs text-amazon-text font-semibold w-6 text-center">{{
+          columnsCount()
+        }}</span>
       </div>
 
       <!-- Gallery Grid -->
