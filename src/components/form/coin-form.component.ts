@@ -2,6 +2,7 @@ import { Component, inject, input, output, signal, effect, computed } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoinStore } from '../../services/coin.store';
+import { ImageStore } from '../../services/image.store';
 import { TagService } from '../../services/tag.service';
 import { I18nService } from '../../services/i18n.service';
 import { NotificationService } from '../../services/notification.service';
@@ -74,7 +75,7 @@ const DEFAULT_NO_PHOTO_URL = '/nophoto.png';
               >
                 <img
                   *ngIf="images()[i]?.trim()"
-                  [src]="images()[i]"
+                  [src]="getImageSrc(images()[i])"
                   [alt]="'Thumbnail'"
                   class="w-full h-full rounded"
                   [style.objectFit]="'cover'"
@@ -349,6 +350,7 @@ const DEFAULT_NO_PHOTO_URL = '/nophoto.png';
 })
 export class CoinFormComponent {
   store = inject(CoinStore);
+  imageStore = inject(ImageStore);
   i18n = inject(I18nService);
   tagService = inject(TagService);
   notificationService = inject(NotificationService);
@@ -371,6 +373,9 @@ export class CoinFormComponent {
   pricePaid = signal('');
   importData = signal('');
   editingCoin = signal<Coin | null>(null);
+
+  // Cache for loaded images
+  private imageCache = signal<Record<string, string>>({});
 
   // Computed indices for images
   imageIndices = computed(() => {
@@ -444,6 +449,9 @@ export class CoinFormComponent {
           coin.addedToCollectionAt ? this.formatDateForInput(coin.addedToCollectionAt) : '',
         );
         this.pricePaid.set(coin.pricePaid ? String(coin.pricePaid) : '');
+
+        // Preload images for this coin
+        this.preloadImages(coin.images);
       } else {
         this.resetForm();
       }
@@ -616,12 +624,34 @@ export class CoinFormComponent {
     console.warn(`Image at index ${index} failed to load`);
   }
 
-  submitForm(): void {
+  async submitForm(): Promise<void> {
     let imageUrls = this.images().filter((img) => img.trim());
 
     // Si no hi ha imatges, afegir la imatge per defecte de "No Photo"
     if (imageUrls.length === 0) {
       imageUrls = [DEFAULT_NO_PHOTO_URL];
+    }
+
+    // Convert image URLs to blob references or keep as-is
+    let processedImages: string[] = [];
+    for (const imageUrl of imageUrls) {
+      try {
+        // If it's a local reference or a local path, keep as-is
+        if (imageUrl.startsWith('img_') || imageUrl.startsWith('/')) {
+          processedImages.push(imageUrl);
+        } else if (this.isValidUrl(imageUrl)) {
+          // If it's an external URL, convert to blob and store
+          const refId = await this.imageStore.saveImageFromUrl(imageUrl);
+          processedImages.push(refId);
+        } else {
+          // If URL is not valid, keep as-is (might be handled by gallery component)
+          processedImages.push(imageUrl);
+        }
+      } catch (error) {
+        console.warn(`Failed to save image blob for URL ${imageUrl}:`, error);
+        // If conversion fails, keep the original URL
+        processedImages.push(imageUrl);
+      }
     }
 
     const weightValue = String(this.weight()).trim();
@@ -630,7 +660,7 @@ export class CoinFormComponent {
 
     const coinInput: CoinInput = {
       reference: this.reference().trim() || undefined,
-      images: imageUrls,
+      images: processedImages,
       tags: this.tags(),
       anvers: this.anvers().trim() || undefined,
       revers: this.revers().trim() || undefined,
@@ -683,6 +713,51 @@ export class CoinFormComponent {
 
   trackByImage(index: number): number {
     return index;
+  }
+
+  private isValidUrl(urlString: string): boolean {
+    try {
+      new URL(urlString);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Preload images for the edited coin
+   */
+  private async preloadImages(imageRefs: string[]): Promise<void> {
+    const cache = { ...this.imageCache() };
+    let hasChanges = false;
+
+    for (const imageRef of imageRefs) {
+      if (imageRef.startsWith('img_') && !cache[imageRef]) {
+        const dataUrl = await this.imageStore.getImage(imageRef);
+        if (dataUrl) {
+          cache[imageRef] = dataUrl;
+          hasChanges = true;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      this.imageCache.set(cache);
+    }
+  }
+
+  /**
+   * Get the actual image source URL, converting blob references to data URLs
+   * Uses cache for IndexedDB images
+   */
+  getImageSrc(imageRef: string): string {
+    // If it's a cached blob reference, return from cache
+    if (imageRef.startsWith('img_')) {
+      const cached = this.imageCache()[imageRef];
+      return cached || imageRef; // Fallback to reference if not loaded yet
+    }
+    // Otherwise, return as-is (URL or local path)
+    return imageRef;
   }
 
   private formatDateForInput(date: Date | string): string {

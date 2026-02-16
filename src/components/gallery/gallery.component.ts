@@ -1,6 +1,7 @@
-import { Component, inject, output, signal, effect } from '@angular/core';
+import { Component, inject, output, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CoinStore } from '../../services/coin.store';
+import { ImageStore } from '../../services/image.store';
 import { TagService } from '../../services/tag.service';
 import { I18nService } from '../../services/i18n.service';
 import { DialogService } from '../../services/dialog.service';
@@ -57,7 +58,7 @@ import { Coin } from '../../models/coin.model';
           >
             <img
               *ngIf="coin.images.length > 0"
-              [src]="coin.images[0]"
+              [src]="getImageSrc(coin.images[0])"
               alt="Moneda"
               class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
             />
@@ -137,11 +138,15 @@ export class GalleryComponent {
   private readonly COLUMNS_STORAGE_KEY = 'numis-gallery-columns';
 
   store = inject(CoinStore);
+  imageStore = inject(ImageStore);
   tagService = inject(TagService);
   i18n = inject(I18nService);
   dialogService = inject(DialogService);
 
   columnsCount = signal(this.loadColumnsFromStorage());
+
+  // Cache for loaded images: map of imageRef -> dataUrl
+  private imageCache = signal<Record<string, string>>({});
 
   editRequested = output<Coin>();
   deleteRequested = output<string>();
@@ -151,6 +156,12 @@ export class GalleryComponent {
     effect(() => {
       const columns = this.columnsCount();
       localStorage.setItem(this.COLUMNS_STORAGE_KEY, String(columns));
+    });
+
+    // Load images for currently visible coins
+    effect(() => {
+      const coins = this.store.filteredCoins();
+      this.preloadCoinImages(coins);
     });
   }
 
@@ -165,8 +176,47 @@ export class GalleryComponent {
     return 8; // Default to 8 columns
   }
 
+  /**
+   * Preload images for visible coins
+   */
+  private async preloadCoinImages(coins: Coin[]): Promise<void> {
+    const cache = { ...this.imageCache() };
+    let hasChanges = false;
+
+    for (const coin of coins) {
+      for (const imageRef of coin.images) {
+        if (imageRef.startsWith('img_') && !cache[imageRef]) {
+          // Need to load this image
+          const dataUrl = await this.imageStore.getImage(imageRef);
+          if (dataUrl) {
+            cache[imageRef] = dataUrl;
+            hasChanges = true;
+          }
+        }
+      }
+    }
+
+    if (hasChanges) {
+      this.imageCache.set(cache);
+    }
+  }
+
   getTagInfo(tagId: string): { category: string; value: string } | null {
     return this.tagService.getTag(tagId) || null;
+  }
+
+  /**
+   * Get the actual image source URL, converting blob references to data URLs
+   * Uses cache for IndexedDB images
+   */
+  getImageSrc(imageRef: string): string {
+    // If it's a cached blob reference, return from cache
+    if (imageRef.startsWith('img_')) {
+      const cached = this.imageCache()[imageRef];
+      return cached || imageRef; // Fallback to reference if not loaded yet
+    }
+    // Otherwise, return as-is (URL or local path)
+    return imageRef;
   }
 
   getVisibleTags(coinTags: string[]): string[] {

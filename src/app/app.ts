@@ -2,6 +2,7 @@ import { Component, inject, signal, ChangeDetectorRef, effect } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CoinStore } from '../services/coin.store';
+import { ImageStore } from '../services/image.store';
 import { TagService } from '../services/tag.service';
 import { SyncService } from '../services/sync.service';
 import { I18nService } from '../services/i18n.service';
@@ -318,6 +319,7 @@ import { Coin } from '../models/coin.model';
 })
 export class App {
   store = inject(CoinStore);
+  imageStore = inject(ImageStore);
   tagService = inject(TagService);
   i18n = inject(I18nService);
   syncService = inject(SyncService);
@@ -399,19 +401,52 @@ export class App {
     this.closeFormModal();
   }
 
-  exportData(): void {
-    const exportData = {
-      coins: JSON.parse(this.store.exportToJSON()),
-      tags: JSON.parse(this.tagService.exportTags()),
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `numis-backup-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+  async exportData(): Promise<void> {
+    try {
+      // Get coins and tags
+      const coins = JSON.parse(this.store.exportToJSON());
+      const tags = JSON.parse(this.tagService.exportTags());
+
+      // Export images from IndexedDB
+      const imageKeys = await this.imageStore.getAllImageKeys();
+      const images: Record<string, string> = {};
+
+      for (const key of imageKeys) {
+        const blob = await this.imageStore.getImageBlob(key);
+        if (blob) {
+          // Convert blob to data URL for export
+          const dataUrl = await this.blobToDataUrl(blob);
+          images[key] = dataUrl;
+        }
+      }
+
+      const exportData = {
+        coins,
+        tags,
+        images,
+        exportedAt: new Date().toISOString(),
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `numis-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      this.notificationService.error('Error exporting data');
+    }
+  }
+
+  private blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   handleFileImport(event: Event): void {
@@ -419,7 +454,7 @@ export class App {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
@@ -433,7 +468,23 @@ export class App {
             this.notificationService.error(this.i18n.t('message.importError'));
           }
         } else if (data.coins && data.tags) {
-          // New format - coins and tags
+          // New format - coins and tags (and optionally images)
+          // Import images first if they exist
+          if (data.images && typeof data.images === 'object') {
+            try {
+              for (const [key, dataUrl] of Object.entries(data.images)) {
+                if (typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+                  // Convert data URL back to blob
+                  const blob = await this.dataUrlToBlob(dataUrl);
+                  await this.imageStore.storeImageBlob(key, blob);
+                }
+              }
+              console.log('Images imported successfully to IndexedDB');
+            } catch (imageError) {
+              console.error('Error importing images:', imageError);
+            }
+          }
+
           // Import tags first (IDs es mantenen igual, sense remapeig)
           try {
             this.tagService.importTags(JSON.stringify(data.tags));
@@ -458,6 +509,23 @@ export class App {
     reader.readAsText(file);
   }
 
+  private dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const arr = dataUrl.split(',');
+      const mimeMatch = arr[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+      const bstr = atob(arr[1]);
+      const n = bstr.length;
+      const u8arr = new Uint8Array(n);
+
+      for (let i = 0; i < n; i++) {
+        u8arr[i] = bstr.charCodeAt(i);
+      }
+
+      resolve(new Blob([u8arr], { type: mime }));
+    });
+  }
+
   clearAllData(): void {
     this.dialogService
       .confirm(
@@ -467,10 +535,12 @@ export class App {
         this.i18n.t('dialog.cancel'),
         true,
       )
-      .then((confirmed) => {
+      .then(async (confirmed) => {
         if (confirmed) {
           this.store.clearAll();
           this.tagService.clearAllTags();
+          // Clear images from IndexedDB
+          await this.imageStore.clearAll();
           this.notificationService.success(this.i18n.t('message.cleared'));
         }
       });

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { signal, effect } from '@angular/core';
 import PouchDB from 'pouchdb-browser';
 import { CoinStore } from './coin.store';
+import { ImageStore } from './image.store';
 import { TagService } from './tag.service';
 import { I18nService } from './i18n.service';
 
@@ -15,6 +16,7 @@ interface SyncData {
 })
 export class SyncService {
   private store = inject(CoinStore);
+  private imageStore = inject(ImageStore);
   private tagService = inject(TagService);
   private i18n = inject(I18nService);
 
@@ -209,6 +211,14 @@ export class SyncService {
       const pushResult = await this.db.replicate.to(this.getRemoteURL(), replicateOptions);
       console.log('Push result:', pushResult);
 
+      // Sync images to server
+      console.log('Syncing images to server...');
+      await this.syncImagesToServer();
+
+      // Download images from server
+      console.log('Downloading images from server...');
+      await this.downloadImagesFromServer();
+
       this.lastSyncTime.set(new Date());
       this.syncing.set(false);
       console.log('✓ Sync complete');
@@ -259,6 +269,16 @@ export class SyncService {
         docs_read: pushResult?.docs_read,
         docs_written: pushResult?.docs_written,
       });
+
+      // Sync images to server (background)
+      this.syncImagesToServer().catch((error) =>
+        console.warn('Background image sync failed:', error),
+      );
+
+      // Download images from server (background)
+      this.downloadImagesFromServer().catch((error) =>
+        console.warn('Background image download failed:', error),
+      );
 
       this.lastSyncTime.set(new Date());
     } catch (error: any) {
@@ -435,5 +455,130 @@ export class SyncService {
       console.error('Error clearing local database:', error);
       this.syncError.set('Failed to clear local database');
     }
+  }
+
+  /**
+   * Syncs images from IndexedDB to CouchDB as attachments
+   * Creates an image document in CouchDB and stores all pending images as attachments
+   */
+  async syncImagesToServer(): Promise<void> {
+    if (!this.db) {
+      console.warn('Local database not initialized');
+      return;
+    }
+
+    try {
+      const pendingImages = await this.imageStore.getImagesPendingSync();
+
+      if (pendingImages.length === 0) {
+        console.log('No images pending sync');
+        return;
+      }
+
+      console.log(`Syncing ${pendingImages.length} images to CouchDB...`);
+
+      // Get or create the images document
+      const imagesDocId = 'numis-images';
+      let imagesDoc: any = null;
+
+      try {
+        imagesDoc = await this.db.get(imagesDocId);
+      } catch (err: any) {
+        if (err.status === 404) {
+          imagesDoc = { _id: imagesDocId };
+        } else {
+          throw err;
+        }
+      }
+
+      // Upload each image as attachment
+      for (const { refId, blob } of pendingImages) {
+        try {
+          // Create attachment key
+          const attachmentId = `${refId}.${this.getImageExtension(blob.type)}`;
+
+          // Add attachment
+          const putResult = await this.db.putAttachment(
+            imagesDocId,
+            attachmentId,
+            imagesDoc._rev,
+            blob,
+            blob.type,
+          );
+
+          // Update _rev for next attachment
+          imagesDoc._rev = putResult.rev;
+
+          // Mark as synced
+          await this.imageStore.markImageSynced(refId, attachmentId);
+
+          console.log(`Image synced: ${attachmentId}`);
+        } catch (error) {
+          console.error(`Error syncing image ${refId}:`, error);
+        }
+      }
+
+      console.log('✓ Images sync complete');
+    } catch (error) {
+      console.error('Error syncing images:', error);
+      // Don't fail completely if image sync fails
+    }
+  }
+
+  /**
+   * Downloads images from CouchDB attachments to IndexedDB
+   */
+  async downloadImagesFromServer(): Promise<void> {
+    if (!this.db) {
+      console.warn('Local database not initialized');
+      return;
+    }
+
+    try {
+      const imagesDocId = 'numis-images';
+
+      try {
+        const doc = await this.db.get(imagesDocId, { attachments: true });
+
+        if (doc._attachments) {
+          console.log(`Downloading ${Object.keys(doc._attachments).length} images from server...`);
+
+          for (const [attachmentId, attachmentData] of Object.entries(doc._attachments)) {
+            try {
+              const blob = await this.db.getAttachment(imagesDocId, attachmentId);
+              const refId = attachmentId.split('.')[0]; // Remove extension
+
+              await this.imageStore.saveImageFromAttachment(refId, blob as Blob, attachmentId);
+              console.log(`Image downloaded: ${attachmentId}`);
+            } catch (error) {
+              console.error(`Error downloading image ${attachmentId}:`, error);
+            }
+          }
+
+          console.log('✓ Images download complete');
+        }
+      } catch (err: any) {
+        if (err.status === 404) {
+          console.log('No images found on server');
+        } else {
+          throw err;
+        }
+      }
+    } catch (error) {
+      console.error('Error downloading images:', error);
+    }
+  }
+
+  /**
+   * Gets file extension from MIME type
+   */
+  private getImageExtension(mimeType: string): string {
+    const extensions: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    };
+    return extensions[mimeType] || 'bin';
   }
 }
