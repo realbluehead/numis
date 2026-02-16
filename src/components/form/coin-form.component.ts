@@ -9,6 +9,8 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TagCategoryPipe, TagValuePipe } from '../../pipes/tag-format.pipe';
 import { Coin, CoinInput, Tag } from '../../models/coin.model';
 
+const DEFAULT_NO_PHOTO_URL = '/nophoto.png';
+
 @Component({
   selector: 'app-coin-form',
   standalone: true,
@@ -615,12 +617,11 @@ export class CoinFormComponent {
   }
 
   submitForm(): void {
-    const imageUrls = this.images().filter((img) => img.trim());
+    let imageUrls = this.images().filter((img) => img.trim());
 
-    // Validation: at least one image required
+    // Si no hi ha imatges, afegir la imatge per defecte de "No Photo"
     if (imageUrls.length === 0) {
-      this.notificationService.error(this.i18n.t('form.errorImage'));
-      return;
+      imageUrls = [DEFAULT_NO_PHOTO_URL];
     }
 
     const weightValue = String(this.weight()).trim();
