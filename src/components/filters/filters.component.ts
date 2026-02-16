@@ -24,7 +24,9 @@ export class JoinPipe implements PipeTransform {
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe, TagCategoryPipe, TagValuePipe],
   template: `
-    <div class="space-y-1 p-2 rounded bg-amazon-card border border-amazon-border shadow-xs">
+    <div
+      class="space-y-1 p-2 rounded bg-amazon-card border border-amazon-border shadow-xs max-h-[calc(100vh-120px)] overflow-y-auto"
+    >
       <!-- Header -->
       <div class="flex items-center justify-between border-b border-amazon-border pb-1">
         <h3 class="text-xs font-display text-amazon-text">{{ 'filters.title' | translate }}</h3>
