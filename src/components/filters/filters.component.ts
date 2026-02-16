@@ -60,7 +60,7 @@ export class JoinPipe implements PipeTransform {
           <!-- Value Toggles -->
           <div class="space-y-1">
             <label
-              *ngFor="let value of tagGroup.values"
+              *ngFor="let value of getVisibleValues(tagGroup.values, tagGroup.category)"
               class="flex items-center gap-1.5 cursor-pointer group"
             >
               <input
@@ -78,6 +78,19 @@ export class JoinPipe implements PipeTransform {
                 >
               </span>
             </label>
+
+            <!-- Show More/Less Button -->
+            <span
+              *ngIf="shouldShowMoreButton(tagGroup.values)"
+              (click)="toggleCategoryExpansion(tagGroup.category)"
+              class="text-xs text-amazon-textMuted hover:text-amazon-text mt-1 cursor-pointer transition-colors"
+            >
+              {{
+                isCategoryExpanded(tagGroup.category)
+                  ? '- mostrar menys'
+                  : '+ mostrar més (' + (tagGroup.values.length - 5) + ')'
+              }}
+            </span>
           </div>
         </div>
       </div>
@@ -185,6 +198,7 @@ export class FiltersComponent {
   searchQuery = signal('');
   weightRange = signal({ min: 0, max: 100 });
   diameterRange = signal({ min: 0, max: 100 });
+  expandedCategories = signal<Set<string>>(new Set());
 
   constructor() {
     // Initialize ranges based on available data
@@ -229,6 +243,33 @@ export class FiltersComponent {
 
   toggleFilter(category: string, value: string): void {
     this.store.toggleFilter(category, value);
+  }
+
+  toggleCategoryExpansion(category: string): void {
+    this.expandedCategories.update((expanded) => {
+      const newExpanded = new Set(expanded);
+      if (newExpanded.has(category)) {
+        newExpanded.delete(category);
+      } else {
+        newExpanded.add(category);
+      }
+      return newExpanded;
+    });
+  }
+
+  isCategoryExpanded(category: string): boolean {
+    return this.expandedCategories().has(category);
+  }
+
+  getVisibleValues(values: string[], category: string): string[] {
+    if (this.isCategoryExpanded(category)) {
+      return values;
+    }
+    return values.slice(0, 5);
+  }
+
+  shouldShowMoreButton(values: string[]): boolean {
+    return values.length > 5;
   }
 
   clearFilters(): void {
