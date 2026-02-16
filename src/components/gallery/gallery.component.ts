@@ -84,7 +84,7 @@ import { Coin } from '../../models/coin.model';
             <!-- Tags -->
             <div class="flex flex-wrap gap-1">
               <span
-                *ngFor="let tagId of coin.tags"
+                *ngFor="let tagId of getVisibleTags(coin.tags)"
                 class="inline-block text-xs px-1.5 py-0.5 badge"
               >
                 <ng-container *ngIf="getTagInfo(tagId) as tagInfo">
@@ -167,6 +167,13 @@ export class GalleryComponent {
 
   getTagInfo(tagId: string): { category: string; value: string } | null {
     return this.tagService.getTag(tagId) || null;
+  }
+
+  getVisibleTags(coinTags: string[]): string[] {
+    return coinTags.filter((tagId) => {
+      const tagInfo = this.getTagInfo(tagId);
+      return tagInfo && tagInfo.category !== 'FACTURA';
+    });
   }
 
   selectCoin(coin: Coin): void {
